@@ -259,8 +259,8 @@ function toggleDots(on, btn) {
 
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
-  d3.json("state_density.json"),
-  d3.json("stations.geojson")
+  d3.json("data/state_density.json"),
+  d3.json("data/stations.geojson")
 ]).then(function(results) {
   var us = results[0], density = results[1], stations = results[2];
 
