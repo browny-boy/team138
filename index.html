@@ -3,12 +3,392 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EV Charging Infrastructure — Team 138</title>
-<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
-<script type="text/javascript" src="../lib/d3-dsv.min.js"></script>
-<script type="text/javascript" src="../lib/d3-tip.min.js"></script>
-<script type="text/javascript" src="../lib/d3-legend.min.js"></script>
-<script type="text/javascript" src="../lib/d3-geo-projection.v2.min.js"></script>
-<script type="text/javascript" src="../lib/topojson.v2.min.js"></script>
+<title>EV Charging Infrastructure - Team 138</title>
+<script type="text/javascript" src="./lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="./lib/d3-dsv.min.js"></script>
+<script type="text/javascript" src="./lib/d3-tip.min.js"></script>
+<script type="text/javascript" src="./lib/d3-legend.min.js"></script>
+<script type="text/javascript" src="./lib/d3-geo-projection.v2.min.js"></script>
+<script type="text/javascript" src="./lib/topojson.v2.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #ffffff;
+  color: #222222;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid #cccccc;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+header h1 { font-size: 14px; font-weight: bold; }
+header p  { font-size: 11px; color: #666666; margin-top: 2px; }
+
+.controls { display: flex; align-items: center; gap: 6px; }
+.controls label { font-size: 12px; color: #444444; }
+
+.controls button {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #aaaaaa;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.controls button.active {
+  background: #3366cc;
+  color: #ffffff;
+  border-color: #3366cc;
+}
+
+#map-wrap { flex: 1; position: relative; overflow: hidden; }
+
+svg#map { width: 100%; height: 100%; cursor: grab; }
+svg#map:active { cursor: grabbing; }
+
+.state-path { stroke: #ffffff; stroke-width: 0.5px; }
+.state-path:hover { opacity: 0.8; cursor: pointer; }
+.state-border { fill: none; stroke: #ffffff; stroke-width: 0.8px; pointer-events: none; }
+.station-dot { stroke: none; opacity: 0.7; }
+.station-dot:hover { opacity: 1; cursor: pointer; }
+
+#tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #ffffff;
+  border: 1px solid #aaaaaa;
+  padding: 8px 10px;
+  font-size: 12px;
+  max-width: 200px;
+  display: none;
+  z-index: 100;
+}
+
+#tooltip .tt-name { font-weight: bold; margin-bottom: 5px; }
+#tooltip .tt-row { display: flex; justify-content: space-between; gap: 10px; color: #555555; margin-top: 2px; }
+#tooltip .tt-row span:last-child { color: #222222; font-weight: bold; }
+
+#state-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #ffffff;
+  border: 1px solid #aaaaaa;
+  padding: 8px 10px;
+  font-size: 12px;
+  display: none;
+  z-index: 99;
+}
+
+#state-tooltip .st-name { font-weight: bold; margin-bottom: 4px; }
+#state-tooltip .st-row { display: flex; justify-content: space-between; gap: 14px; color: #555555; margin-top: 2px; }
+#state-tooltip .st-row span:last-child { color: #222222; }
+
+#legend {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  background: #ffffff;
+  border: 1px solid #aaaaaa;
+  padding: 10px 12px;
+  font-size: 11px;
+  z-index: 50;
+  min-width: 150px;
+}
+
+#legend .leg-title { font-weight: bold; font-size: 11px; color: #444444; margin-bottom: 6px; }
+#choropleth-legend { margin-bottom: 10px; }
+#choropleth-legend canvas { width: 100%; height: 10px; display: block; }
+.leg-range { display: flex; justify-content: space-between; color: #666666; font-size: 10px; margin-top: 2px; }
+.net-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.net-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+#zoom-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 3px; z-index: 50; }
+#zoom-controls button { width: 26px; height: 26px; background: #ffffff; border: 1px solid #aaaaaa; border-radius: 3px; font-size: 16px; cursor: pointer; line-height: 1; }
+#zoom-controls button:hover { background: #eeeeee; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>EV Charging Infrastructure - Team 138</h1>
+    <p>82,738 active stations across 51 states + DC</p>
+  </div>
+  <div class="controls">
+    <label>Choropleth:</label>
+    <button id="btn-100k" class="active" onclick="setMetric('chargers_per_100k', this)">Per 100k residents</button>
+    <button id="btn-sqmi" onclick="setMetric('chargers_per_sq_mi', this)">Per sq mile</button>
+    <label style="margin-left:8px">Stations:</label>
+    <button id="btn-dots-on"  class="active" onclick="toggleDots(true,  this)">On</button>
+    <button id="btn-dots-off" onclick="toggleDots(false, this)">Off</button>
+  </div>
+</header>
+
+<div id="map-wrap">
+  <svg id="map"></svg>
+
+  <div id="zoom-controls">
+    <button onclick="zoomIn()">+</button>
+    <button onclick="zoomOut()">-</button>
+    <button onclick="zoomReset()">R</button>
+  </div>
+
+  <div id="legend">
+    <div id="choropleth-legend">
+      <div class="leg-title" id="leg-label">Chargers per 100k residents</div>
+      <canvas id="leg-canvas" height="10"></canvas>
+      <div class="leg-range">
+        <span id="leg-min">0</span>
+        <span id="leg-max">-</span>
+      </div>
+    </div>
+    <div class="leg-title">Network</div>
+    <div id="network-legend"></div>
+  </div>
+
+  <div id="tooltip">
+    <div class="tt-name" id="tt-name"></div>
+    <div class="tt-row"><span>State</span><span id="tt-state"></span></div>
+    <div class="tt-row"><span>ZIP</span><span id="tt-zip"></span></div>
+    <div class="tt-row"><span>Ports</span><span id="tt-ports"></span></div>
+    <div class="tt-row"><span>DC fast</span><span id="tt-dc"></span></div>
+    <div class="tt-row"><span>Access</span><span id="tt-access"></span></div>
+    <div class="tt-row"><span>ZIP pop.</span><span id="tt-pop"></span></div>
+    <div class="tt-row"><span>Network</span><span id="tt-network"></span></div>
+  </div>
+
+  <div id="state-tooltip">
+    <div class="st-name" id="st-name"></div>
+    <div class="st-row"><span>Stations</span><span id="st-count"></span></div>
+    <div class="st-row"><span>Per 100k</span><span id="st-100k"></span></div>
+    <div class="st-row"><span>Per sq mi</span><span id="st-sqmi"></span></div>
+  </div>
+</div>
+
+<script>
+var NETWORK_COLORS = {
+  "ChargePoint Network": "#1f77b4",
+  "Tesla":               "#d62728",
+  "Tesla Destination":   "#ff9896",
+  "Blink Network":       "#2ca02c",
+  "Non-Networked":       "#999999",
+  "EV Connect":          "#9467bd",
+  "AMPUP":               "#ff7f0e",
+  "FLO":                 "#17becf",
+  "Other":               "#7f7f7f"
+};
+
+function netColor(network) {
+  for (var key in NETWORK_COLORS) {
+    if (network && network.indexOf(key.split(" ")[0]) !== -1) return NETWORK_COLORS[key];
+  }
+  return NETWORK_COLORS["Other"];
+}
+
+var CHORO_SCALE   = d3.scaleSequential(d3.interpolateYlOrRd);
+var currentMetric = "chargers_per_100k";
+var densityData   = {};
+var geoData, stationsData;
+
+var STATE_FIPS = {
+  "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09",
+  "DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17",
+  "IN":"18","IA":"19","KS":"20","KY":"21","LA":"22","ME":"23","MD":"24",
+  "MA":"25","MI":"26","MN":"27","MS":"28","MO":"29","MT":"30","NE":"31",
+  "NV":"32","NH":"33","NJ":"34","NM":"35","NY":"36","NC":"37","ND":"38",
+  "OH":"39","OK":"40","OR":"41","PA":"42","RI":"44","SC":"45","SD":"46",
+  "TN":"47","TX":"48","UT":"49","VT":"50","VA":"51","WA":"53","WV":"54",
+  "WI":"55","WY":"56"
+};
+
+var FIPS_STATE = {};
+for (var abbr in STATE_FIPS) { FIPS_STATE[STATE_FIPS[abbr]] = abbr; }
+
+var svg     = d3.select("#map");
+var mapWrap = document.getElementById("map-wrap");
+var g       = svg.append("g");
+var gStates = g.append("g");
+var gDots   = g.append("g");
+
+var projection = d3.geoAlbersUsa();
+var path       = d3.geoPath().projection(projection);
+
+var zoom = d3.zoom()
+  .scaleExtent([0.8, 20])
+  .on("zoom", function() {
+    var t = d3.event.transform;
+    g.attr("transform", t);
+    gDots.selectAll(".station-dot").attr("r", Math.max(0.8, 2.5 / Math.sqrt(t.k)));
+  });
+
+svg.call(zoom);
+
+function zoomIn()    { svg.transition().call(zoom.scaleBy, 1.5); }
+function zoomOut()   { svg.transition().call(zoom.scaleBy, 0.67); }
+function zoomReset() { svg.transition().call(zoom.transform, d3.zoomIdentity); }
+
+function setMetric(metric, btn) {
+  currentMetric = metric;
+  document.getElementById("btn-100k").classList.remove("active");
+  document.getElementById("btn-sqmi").classList.remove("active");
+  btn.classList.add("active");
+  updateChoropleth();
+}
+
+function toggleDots(on, btn) {
+  gDots.style("display", on ? null : "none");
+  document.getElementById("btn-dots-on").classList.remove("active");
+  document.getElementById("btn-dots-off").classList.remove("active");
+  btn.classList.add("active");
+}
+
+Promise.all([
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
+  d3.json("state_density.json"),
+  d3.json("stations.geojson")
+]).then(function(results) {
+  var us = results[0], density = results[1], stations = results[2];
+
+  density.forEach(function(d) { densityData[d.State] = d; });
+  geoData = us; stationsData = stations;
+
+  var W = mapWrap.clientWidth, H = mapWrap.clientHeight;
+  projection.scale(1).translate([0,0]);
+  var b = path.bounds(topojson.feature(us, us.objects.states));
+  var s = 0.92 / Math.max((b[1][0]-b[0][0])/W, (b[1][1]-b[0][1])/H);
+  var t = [(W-(s*(b[1][0]+b[0][0])))/2, (H-(s*(b[1][1]+b[0][1])))/2];
+  projection.scale(s).translate(t);
+
+  drawStates();
+  drawDots();
+  buildLegend();
+  updateChoropleth();
+
+}).catch(function(err) {
+  alert("Could not load data files. Check the browser console.");
+  console.error(err);
+});
+
+function drawStates() {
+  var states = topojson.feature(geoData, geoData.objects.states);
+  gStates.selectAll(".state-path")
+    .data(states.features)
+    .enter().append("path")
+    .attr("class","state-path")
+    .attr("d", path)
+    .on("mousemove", function(d) {
+      var e = d3.event;
+      var fips = String(d.id).padStart(2,"0");
+      var abbr = FIPS_STATE[fips];
+      var row  = densityData[abbr];
+      if (!row) return;
+      var tt = document.getElementById("state-tooltip");
+      tt.style.display = "block";
+      tt.style.left = (e.offsetX + 12) + "px";
+      tt.style.top  = (e.offsetY - 10) + "px";
+      document.getElementById("st-name").textContent  = abbr || "-";
+      document.getElementById("st-count").textContent = (row["Charging Station"] || 0).toLocaleString();
+      document.getElementById("st-100k").textContent  = row.chargers_per_100k || "-";
+      document.getElementById("st-sqmi").textContent  = row.chargers_per_sq_mi || "-";
+    })
+    .on("mouseleave", function() {
+      document.getElementById("state-tooltip").style.display = "none";
+    });
+
+  gStates.append("path")
+    .datum(topojson.mesh(geoData, geoData.objects.states, function(a,b) { return a !== b; }))
+    .attr("class","state-border")
+    .attr("d", path);
+}
+
+function drawDots() {
+  var tt = document.getElementById("tooltip");
+  gDots.selectAll(".station-dot")
+    .data(stationsData.features)
+    .enter().append("circle")
+    .attr("class","station-dot")
+    .attr("r", 2.5)
+    .attr("cx", function(d) { var p = projection(d.geometry.coordinates); return p ? p[0] : null; })
+    .attr("cy", function(d) { var p = projection(d.geometry.coordinates); return p ? p[1] : null; })
+    .attr("fill", function(d) { return netColor(d.properties.network); })
+    .style("display", function(d) { var p = projection(d.geometry.coordinates); return p ? null : "none"; })
+    .on("mousemove", function(d) {
+      var e = d3.event, p = d.properties;
+      tt.style.display = "block";
+      tt.style.left = (e.offsetX + 14) + "px";
+      tt.style.top  = (e.offsetY - 10) + "px";
+      document.getElementById("tt-name").textContent    = p.name    || "Unknown";
+      document.getElementById("tt-state").textContent   = p.state   || "-";
+      document.getElementById("tt-zip").textContent     = p.zip     || "-";
+      document.getElementById("tt-ports").textContent   = p.ports   || 0;
+      document.getElementById("tt-dc").textContent      = p.dc_fast || 0;
+      document.getElementById("tt-access").textContent  = p.access  || "-";
+      document.getElementById("tt-pop").textContent     = p.zip_pop ? p.zip_pop.toLocaleString() : "-";
+      document.getElementById("tt-network").textContent = p.network || "Unknown";
+    })
+    .on("mouseleave", function() { tt.style.display = "none"; });
+}
+
+function updateChoropleth() {
+  var vals = [];
+  for (var s in densityData) {
+    var v = densityData[s][currentMetric];
+    if (v != null && !isNaN(v)) vals.push(v);
+  }
+  var ext = d3.extent(vals);
+  CHORO_SCALE.domain(ext);
+  gStates.selectAll(".state-path")
+    .attr("fill", function(d) {
+      var fips = String(d.id).padStart(2,"0");
+      var abbr = FIPS_STATE[fips];
+      var row  = densityData[abbr];
+      if (!row || row[currentMetric] == null) return "#dddddd";
+      return CHORO_SCALE(row[currentMetric]);
+    });
+  var label = currentMetric === "chargers_per_100k" ? "Chargers per 100k residents" : "Chargers per sq mile";
+  document.getElementById("leg-label").textContent = label;
+  document.getElementById("leg-min").textContent   = ext[0].toFixed(1);
+  document.getElementById("leg-max").textContent   = ext[1].toFixed(currentMetric === "chargers_per_sq_mi" ? 3 : 1);
+  drawGradient();
+}
+
+function buildLegend() {
+  drawGradient();
+  var netLeg = document.getElementById("network-legend");
+  netLeg.innerHTML = "";
+  for (var name in NETWORK_COLORS) {
+    var row = document.createElement("div");
+    row.className = "net-row";
+    row.innerHTML = '<div class="net-dot" style="background:' + NETWORK_COLORS[name] + '"></div><span>' + name + '</span>';
+    netLeg.appendChild(row);
+  }
+}
+
+function drawGradient() {
+  var canvas = document.getElementById("leg-canvas");
+  canvas.width = canvas.offsetWidth || 140;
+  var ctx = canvas.getContext("2d");
+  var lo = CHORO_SCALE.domain()[0], hi = CHORO_SCALE.domain()[1];
+  for (var i = 0; i < canvas.width; i++) {
+    ctx.fillStyle = CHORO_SCALE(lo + (i / canvas.width) * (hi - lo));
+    ctx.fillRect(i, 0, 1, 10);
+  }
+}
+</script>
+</body>
+</html>
