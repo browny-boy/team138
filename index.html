@@ -4,12 +4,72 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EV Charging Infrastructure - Team 138</title>
-<script type="text/javascript" src="./lib/d3.v5.min.js"></script>
-<script type="text/javascript" src="./lib/d3-dsv.min.js"></script>
-<script type="text/javascript" src="./lib/d3-tip.min.js"></script>
-<script type="text/javascript" src="./lib/d3-legend.min.js"></script>
-<script type="text/javascript" src="./lib/d3-geo-projection.v2.min.js"></script>
-<script type="text/javascript" src="./lib/topojson.v2.min.js"></script>
+<script type="text/javascript" src="./lib/d3.v5.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
+<script type="text/javascript" src="./lib/d3-dsv.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
+<script type="text/javascript" src="./lib/d3-tip.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
+<script type="text/javascript" src="./lib/d3-legend.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
+<script type="text/javascript" src="./lib/d3-geo-projection.v2.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
+<script type="text/javascript" src="./lib/topojson.v2.min.js">
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
+}
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -136,6 +196,18 @@ svg#map:active { cursor: grabbing; }
     <label style="margin-left:8px">Stations:</label>
     <button id="btn-dots-on"  class="active" onclick="toggleDots(true,  this)">On</button>
     <button id="btn-dots-off" onclick="toggleDots(false, this)">Off</button>
+    <label style="margin-left:8px">Network:</label>
+    <select id="network-filter" onchange="filterNetwork(this.value)" style="font-family:Arial,sans-serif;font-size:12px;padding:4px 8px;border:1px solid #aaaaaa;border-radius:3px;">
+      <option value="all">All networks</option>
+      <option value="ChargePoint">ChargePoint</option>
+      <option value="Tesla Destination">Tesla Destination</option>
+      <option value="Tesla">Tesla (Supercharger)</option>
+      <option value="Blink">Blink</option>
+      <option value="Non-Networked">Non-Networked</option>
+      <option value="EV Connect">EV Connect</option>
+      <option value="AMPUP">AMPUP</option>
+      <option value="FLO">FLO</option>
+    </select>
   </div>
 </header>
 
@@ -388,6 +460,16 @@ function drawGradient() {
     ctx.fillStyle = CHORO_SCALE(lo + (i / canvas.width) * (hi - lo));
     ctx.fillRect(i, 0, 1, 10);
   }
+}
+
+function filterNetwork(value) {
+  gDots.selectAll(".station-dot")
+    .style("display", function(d) {
+      var p = projection(d.geometry.coordinates);
+      if (!p) return "none";
+      if (value === "all") return null;
+      return d.properties.network && d.properties.network.indexOf(value) !== -1 ? null : "none";
+    });
 }
 </script>
 </body>
