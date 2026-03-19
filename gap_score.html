@@ -1,1 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EV Gap Score Dashboard - Team 138</title>
+<script type="text/javascript" src="./lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="./lib/topojson.v2.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
+body {
+  background: #ffffff;
+  color: #222222;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid #cccccc;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+header h1 { font-size: 14px; font-weight: bold; }
+header p  { font-size: 11px; color: #666666; margin-top: 2px; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls label { font-size: 12px; color: #444444; }
+
+.controls button {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid #aaaaaa;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.controls button.active {
+  background: #3366cc;
+  color: #ffffff;
+  border-color: #3366cc;
+}
+
+#nav-back {
+  font-size: 12px;
+  color: #3366cc;
+  text-decoration: none;
+  border: 1px solid #3366cc;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+#nav-back:hover { background: #3366cc; color: #ffffff; }
+
+/* ── Main layout ── */
+#main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: #cccccc;
+  overflow: hidden;
+}
+
+.panel {
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #444444;
+  padding: 6px 10px;
+  border-bottom: 1px solid #eeeeee;
+  background: #f9f9f9;
+}
+
+.panel-body {
+  position: absolute;
+  top: 28px;
+  left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
+
+/* ── Tooltip ── */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #ffffff;
+  border: 1px solid #aaaaaa;
+  padding: 8px 10px;
+  font-size: 11px;
+  max-width: 180px;
+  display: none;
+  z-index: 1000;
+}
+
+#tooltip .tt-state { font-weight: bold; margin-bottom: 4px; font-size: 12px; }
+#tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #555555;
+  margin-top: 2px;
+}
+#tooltip .tt-row span:last-child { color: #222222; font-weight: bold; }
+
+/* ── Selected state highlight ── */
+.state-path { stroke: #ffffff; stroke-width: 0.5px; cursor: pointer; }
+.state-path:hover { stroke: #333333; stroke-width: 1.5px; }
+.state-path.selected { stroke: #333333; stroke-width: 2px; }
+.state-border { fill: none; stroke: #ffffff; stroke-width: 0.8px; pointer-events: none; }
+
+/* ── Scatter ── */
+.dot { cursor: pointer; }
+.dot:hover { stroke: #333333; stroke-width: 1.5px; }
+.dot.selected { stroke: #333333; stroke-width: 2px; }
+
+/* ── Bar ── */
+.bar { cursor: pointer; }
+.bar:hover { opacity: 0.8; }
+.bar.selected { stroke: #333333; stroke-width: 1.5px; }
+
+/* ── Table ── */
+#table-wrap {
+  overflow-y: auto;
+  height: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+thead th {
+  background: #f0f0f0;
+  border-bottom: 1px solid #cccccc;
+  padding: 5px 8px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+thead th:hover { background: #e0e0e0; }
+
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #f5f5f5; }
+tbody tr.selected { background: #dce8ff; }
+tbody td { padding: 4px 8px; border-bottom: 1px solid #eeeeee; }
+
+.gap-pos { color: #cc3300; font-weight: bold; }
+.gap-neg { color: #0066cc; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>EV Infrastructure Gap Score Dashboard - Team 138</h1>
+    <p>Click any state to highlight across all views &nbsp;|&nbsp; Toggle recency below</p>
+  </div>
+  <div class="controls">
+    <label>Recency:</label>
+    <button id="btn-2y" onclick="setRecency('recency_2y', this)">λ=0.35 (2yr)</button>
+    <button id="btn-3y" class="active" onclick="setRecency('recency_3y', this)">λ=0.23 (3yr)</button>
+    <a href="index.html" id="nav-back">← Station Map</a>
+  </div>
+</header>
+
+<div id="main">
+  <!-- Top-left: Choropleth -->
+  <div class="panel" id="panel-map">
+    <div class="panel-title">Gap score by state (red = underserved, blue = over-built)</div>
+    <div class="panel-body">
+      <svg id="map" width="100%" height="100%"></svg>
+    </div>
+  </div>
+
+  <!-- Top-right: Scatter -->
+  <div class="panel" id="panel-scatter">
+    <div class="panel-title">Policy score vs infrastructure (chargers per 100k)</div>
+    <div class="panel-body">
+      <svg id="scatter" width="100%" height="100%"></svg>
+    </div>
+  </div>
+
+  <!-- Bottom-left: Bar chart -->
+  <div class="panel" id="panel-bar">
+    <div class="panel-title">Gap score ranking (all states)</div>
+    <div class="panel-body">
+      <svg id="bar" width="100%" height="100%"></svg>
+    </div>
+  </div>
+
+  <!-- Bottom-right: Table -->
+  <div class="panel" id="panel-table">
+    <div class="panel-title">State details — click column header to sort</div>
+    <div class="panel-body">
+      <div id="table-wrap">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('State')">State</th>
+              <th onclick="sortTable('gap_score')">Gap score</th>
+              <th onclick="sortTable('policy_norm')">Policy norm</th>
+              <th onclick="sortTable('infra_norm')">Infra norm</th>
+              <th onclick="sortTable('chargers_per_100k')">Per 100k</th>
+              <th onclick="sortTable('weighted_policy_score')">Wtd policy</th>
+              <th onclick="sortTable('recency_3y')">Recency</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-state" id="tt-state"></div>
+  <div class="tt-row"><span>Gap score</span><span id="tt-gap"></span></div>
+  <div class="tt-row"><span>Policy norm</span><span id="tt-policy"></span></div>
+  <div class="tt-row"><span>Infra norm</span><span id="tt-infra"></span></div>
+  <div class="tt-row"><span>Per 100k</span><span id="tt-100k"></span></div>
+  <div class="tt-row"><span>Recency</span><span id="tt-recency"></span></div>
+</div>
+
+<script>
+var allData      = [];
+var currentData  = [];
+var selectedState = null;
+var recencyField  = "recency_3y";
+var sortCol       = "gap_score";
+var sortAsc       = false;
+
+// FIPS lookup
+var STATE_FIPS = {
+  "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09",
+  "DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17",
+  "IN":"18","IA":"19","KS":"20","KY":"21","LA":"22","ME":"23","MD":"24",
+  "MA":"25","MI":"26","MN":"27","MS":"28","MO":"29","MT":"30","NE":"31",
+  "NV":"32","NH":"33","NJ":"34","NM":"35","NY":"36","NC":"37","ND":"38",
+  "OH":"39","OK":"40","OR":"41","PA":"42","RI":"44","SC":"45","SD":"46",
+  "TN":"47","TX":"48","UT":"49","VT":"50","VA":"51","WA":"53","WV":"54",
+  "WI":"55","WY":"56"
+};
+var FIPS_STATE = {};
+for (var a in STATE_FIPS) { FIPS_STATE[STATE_FIPS[a]] = a; }
+
+// Color scales
+var GAP_SCALE = d3.scaleDivergingSymlog(d3.interpolateRdBu).domain([0.9, 0, -0.9]);
+
+function gapColor(v) { return GAP_SCALE(-v); }
+
+// Tooltip helpers
+var tt = document.getElementById("tooltip");
+
+function showTT(e, d) {
+  tt.style.display = "block";
+  tt.style.left = (e.clientX + 14) + "px";
+  tt.style.top  = (e.clientY - 10) + "px";
+  document.getElementById("tt-state").textContent   = d.State;
+  document.getElementById("tt-gap").textContent     = d.gap_score != null ? d.gap_score.toFixed(4) : "-";
+  document.getElementById("tt-policy").textContent  = d.policy_norm != null ? d.policy_norm.toFixed(4) : "-";
+  document.getElementById("tt-infra").textContent   = d.infra_norm != null ? d.infra_norm.toFixed(4) : "-";
+  document.getElementById("tt-100k").textContent    = d.chargers_per_100k != null ? d.chargers_per_100k.toFixed(1) : "-";
+  document.getElementById("tt-recency").textContent = d[recencyField] != null ? d[recencyField].toFixed(4) : "-";
+}
+
+function hideTT() { tt.style.display = "none"; }
+
+// Select state — highlights all views
+function selectState(state) {
+  selectedState = (selectedState === state) ? null : state;
+  updateAllHighlights();
+  if (selectedState) scrollTableToState(selectedState);
+}
+
+function updateAllHighlights() {
+  d3.selectAll(".state-path").classed("selected", function(d) {
+    var fips = String(d.id).padStart(2,"0");
+    return FIPS_STATE[fips] === selectedState;
+  });
+  d3.selectAll(".dot").classed("selected", function(d) {
+    return d.State === selectedState;
+  });
+  d3.selectAll(".bar").classed("selected", function(d) {
+    return d.State === selectedState;
+  });
+  d3.selectAll("tbody tr").classed("selected", function(d) {
+    return d && d.State === selectedState;
+  });
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────
+Promise.all([
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
+  d3.json("data/gap_scores.json")
+]).then(function(results) {
+  var us   = results[0];
+  var data = results[1];
+
+  allData = data;
+  computeGapScores();
+  drawMap(us);
+  drawScatter();
+  drawBar();
+  drawTable();
+
+}).catch(function(err) {
+  alert("Could not load data. Check the browser console.");
+  console.error(err);
+});
+
+// Recompute gap scores when recency changes
+function computeGapScores() {
+  // Recompute weighted_policy_score using selected recency field
+  allData.forEach(function(d) {
+    if (d.policy_score != null && d[recencyField] != null) {
+      d._wpolicy = d.policy_score * d[recencyField];
+    } else {
+      d._wpolicy = d.weighted_policy_score || 0;
+    }
+  });
+
+  // Re-normalize
+  var pvals = allData.map(function(d) { return d._wpolicy; }).filter(function(v) { return v != null; });
+  var ivals = allData.map(function(d) { return d.chargers_per_100k; }).filter(function(v) { return v != null; });
+  var plo = d3.min(pvals), phi = d3.max(pvals);
+  var ilo = d3.min(ivals), ihi = d3.max(ivals);
+
+  allData.forEach(function(d) {
+    d._pnorm = (phi > plo) ? (d._wpolicy - plo) / (phi - plo) : 0;
+    d._inorm = (ihi > ilo) ? (d.chargers_per_100k - ilo) / (ihi - ilo) : 0;
+    d._gap   = (d._pnorm != null && d._inorm != null) ? +(d._pnorm - d._inorm).toFixed(4) : null;
+  });
+
+  currentData = allData.slice();
+}
+
+// ── CHOROPLETH MAP ────────────────────────────────────────────────
+function drawMap(us) {
+  var wrap = document.getElementById("panel-map").querySelector(".panel-body");
+  var W = wrap.clientWidth, H = wrap.clientHeight;
+  var svg = d3.select("#map");
+
+  var projection = d3.geoAlbersUsa().scale(1).translate([0,0]);
+  var path = d3.geoPath().projection(projection);
+  var b = path.bounds(topojson.feature(us, us.objects.states));
+  var s = 0.92 / Math.max((b[1][0]-b[0][0])/W, (b[1][1]-b[0][1])/H);
+  var t = [(W-(s*(b[1][0]+b[0][0])))/2, (H-(s*(b[1][1]+b[0][1])))/2];
+  projection.scale(s).translate(t);
+
+  var byState = {};
+  allData.forEach(function(d) { byState[d.State] = d; });
+
+  var states = topojson.feature(us, us.objects.states);
+
+  svg.selectAll(".state-path")
+    .data(states.features)
+    .enter().append("path")
+    .attr("class","state-path")
+    .attr("d", path)
+    .attr("fill", function(d) {
+      var abbr = FIPS_STATE[String(d.id).padStart(2,"0")];
+      var row  = byState[abbr];
+      if (!row || row._gap == null) return "#dddddd";
+      return gapColor(row._gap);
+    })
+    .on("mousemove", function(d) {
+      var abbr = FIPS_STATE[String(d.id).padStart(2,"0")];
+      var row  = byState[abbr];
+      if (!row) return;
+      showTT(d3.event, row);
+    })
+    .on("mouseleave", hideTT)
+    .on("click", function(d) {
+      var abbr = FIPS_STATE[String(d.id).padStart(2,"0")];
+      selectState(abbr);
+    });
+
+  svg.append("path")
+    .datum(topojson.mesh(us, us.objects.states, function(a,b) { return a !== b; }))
+    .attr("class","state-border")
+    .attr("d", path);
+
+  // State abbreviation labels
+  allData.forEach(function(d) {
+    var coords = {
+      "AL":[86.9,32.8],"AK":[153.4,61.4],"AZ":[111.9,34.3],"AR":[92.4,34.9],
+      "CA":[119.7,37.2],"CO":[105.5,39.0],"CT":[72.7,41.6],"DE":[75.5,39.0],
+      "FL":[81.5,27.8],"GA":[83.4,32.7],"HI":[157.5,20.3],"ID":[114.5,44.4],
+      "IL":[89.2,40.0],"IN":[86.3,40.0],"IA":[93.5,42.1],"KS":[98.4,38.5],
+      "KY":[84.9,37.5],"LA":[91.9,31.2],"ME":[69.4,45.4],"MD":[76.8,39.1],
+      "MA":[71.8,42.3],"MI":[84.7,44.3],"MN":[94.3,46.4],"MS":[89.7,32.7],
+      "MO":[92.5,38.5],"MT":[110.5,47.0],"NE":[99.9,41.5],"NV":[116.7,39.5],
+      "NH":[71.6,43.7],"NJ":[74.4,40.1],"NM":[106.1,34.5],"NY":[75.1,43.0],
+      "NC":[79.4,35.6],"ND":[100.5,47.5],"OH":[82.8,40.4],"OK":[97.5,35.5],
+      "OR":[120.6,44.0],"PA":[77.2,40.9],"RI":[71.5,41.7],"SC":[80.9,33.8],
+      "SD":[100.3,44.4],"TN":[86.7,35.9],"TX":[99.3,31.5],"UT":[111.1,39.5],
+      "VT":[72.7,44.0],"VA":[78.5,37.5],"WA":[120.5,47.4],"WV":[80.7,38.6],
+      "WI":[89.8,44.5],"WY":[107.6,43.0],"DC":[77.0,38.9]
+    };
+    var c = coords[d.State];
+    if (!c) return;
+    var pt = projection([-c[0], c[1]]);
+    if (!pt) return;
+    svg.append("text")
+      .attr("x", pt[0]).attr("y", pt[1])
+      .attr("text-anchor","middle")
+      .attr("font-family","Arial").attr("font-size","8px")
+      .attr("fill","#333333").attr("pointer-events","none")
+      .text(d.State);
+  });
+
+  // Map color legend
+  var legW = 120, legH = 10;
+  var legX = 10, legY = H - 40;
+  var legSvg = svg.append("g").attr("transform","translate("+legX+","+legY+")");
+  var defs = svg.append("defs");
+  var grad = defs.append("linearGradient").attr("id","gap-grad");
+  grad.append("stop").attr("offset","0%").attr("stop-color", gapColor(0.9));
+  grad.append("stop").attr("offset","50%").attr("stop-color", gapColor(0));
+  grad.append("stop").attr("offset","100%").attr("stop-color", gapColor(-0.9));
+  legSvg.append("rect").attr("width",legW).attr("height",legH).attr("fill","url(#gap-grad)");
+  legSvg.append("text").attr("font-size","9px").attr("font-family","Arial").attr("fill","#444")
+    .attr("y", legH + 10).attr("x",0).text("Underserved");
+  legSvg.append("text").attr("font-size","9px").attr("font-family","Arial").attr("fill","#444")
+    .attr("y", legH + 10).attr("x",legW).attr("text-anchor","end").text("Over-built");
+}
+
+function updateMapColors() {
+  var byState = {};
+  allData.forEach(function(d) { byState[d.State] = d; });
+  d3.selectAll(".state-path").attr("fill", function(d) {
+    var abbr = FIPS_STATE[String(d.id).padStart(2,"0")];
+    var row  = byState[abbr];
+    if (!row || row._gap == null) return "#dddddd";
+    return gapColor(row._gap);
+  });
+}
+
+// ── SCATTER PLOT ──────────────────────────────────────────────────
+function drawScatter() {
+  var wrap = document.getElementById("panel-scatter").querySelector(".panel-body");
+  var W = wrap.clientWidth, H = wrap.clientHeight;
+  var margin = {top:20, right:20, bottom:40, left:50};
+  var w = W - margin.left - margin.right;
+  var h = H - margin.top  - margin.bottom;
+
+  d3.select("#scatter").selectAll("*").remove();
+  var svg = d3.select("#scatter")
+    .append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+
+  var xScale = d3.scaleLinear().domain([0,1]).range([0,w]);
+  var yScale = d3.scaleLinear().domain([0, d3.max(allData, function(d) { return d.chargers_per_100k; }) * 1.1]).range([h,0]);
+
+  // Axes
+  svg.append("g").attr("transform","translate(0,"+h+")")
+    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".1f")))
+    .selectAll("text").attr("font-size","10px");
+  svg.append("g")
+    .call(d3.axisLeft(yScale).ticks(5))
+    .selectAll("text").attr("font-size","10px");
+
+  // Axis labels
+  svg.append("text").attr("font-size","10px").attr("fill","#666")
+    .attr("text-anchor","middle").attr("x",w/2).attr("y",h+32)
+    .text("Policy score (normalized, recency-weighted)");
+  svg.append("text").attr("font-size","10px").attr("fill","#666")
+    .attr("text-anchor","middle").attr("transform","rotate(-90)")
+    .attr("x",-h/2).attr("y",-36)
+    .text("Chargers per 100k residents");
+
+  // Diagonal reference line (perfect alignment)
+  var maxY = yScale.domain()[1];
+  svg.append("line")
+    .attr("x1", xScale(0)).attr("y1", yScale(0))
+    .attr("x2", xScale(1)).attr("y2", yScale(maxY * 1))
+    .attr("stroke","#cccccc").attr("stroke-width","1")
+    .attr("stroke-dasharray","4,4");
+
+  // Dots
+  svg.selectAll(".dot")
+    .data(allData)
+    .enter().append("circle")
+    .attr("class","dot")
+    .attr("cx", function(d) { return xScale(d._pnorm || 0); })
+    .attr("cy", function(d) { return yScale(d.chargers_per_100k || 0); })
+    .attr("r", 6)
+    .attr("fill", function(d) { return gapColor(d._gap || 0); })
+    .attr("stroke","none")
+    .attr("opacity", 0.85)
+    .on("mousemove", function(d) { showTT(d3.event, d); })
+    .on("mouseleave", hideTT)
+    .on("click", function(d) { selectState(d.State); });
+
+  // State labels on dots
+  svg.selectAll(".dot-label")
+    .data(allData)
+    .enter().append("text")
+    .attr("class","dot-label")
+    .attr("x", function(d) { return xScale(d._pnorm || 0) + 7; })
+    .attr("y", function(d) { return yScale(d.chargers_per_100k || 0) + 3; })
+    .attr("font-size","8px").attr("fill","#333333")
+    .attr("pointer-events","none")
+    .text(function(d) { return d.State; });
+}
+
+function updateScatterDots() {
+  d3.selectAll(".dot")
+    .attr("cx", function(d) {
+      var wrap = document.getElementById("panel-scatter").querySelector(".panel-body");
+      var W = wrap.clientWidth, margin = {left:50,right:20};
+      var w = W - margin.left - margin.right;
+      return d3.scaleLinear().domain([0,1]).range([0,w])(d._pnorm || 0);
+    })
+    .attr("fill", function(d) { return gapColor(d._gap || 0); });
+}
+
+// ── BAR CHART ─────────────────────────────────────────────────────
+function drawBar() {
+  var wrap = document.getElementById("panel-bar").querySelector(".panel-body");
+  var W = wrap.clientWidth, H = wrap.clientHeight;
+  var margin = {top:10, right:20, bottom:20, left:36};
+  var w = W - margin.left - margin.right;
+  var h = H - margin.top  - margin.bottom;
+
+  d3.select("#bar").selectAll("*").remove();
+  var svg = d3.select("#bar")
+    .append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+
+  var sorted = allData.slice().sort(function(a,b) { return (b._gap||0) - (a._gap||0); });
+
+  var xScale = d3.scaleLinear()
+    .domain([d3.min(sorted, function(d){ return d._gap||0; }), d3.max(sorted, function(d){ return d._gap||0; })])
+    .range([0, w]);
+
+  var yScale = d3.scaleBand()
+    .domain(sorted.map(function(d){ return d.State; }))
+    .range([0, h]).padding(0.15);
+
+  svg.append("g").call(d3.axisLeft(yScale).tickSize(0))
+    .selectAll("text").attr("font-size","8px");
+  svg.append("g").attr("transform","translate(0,"+h+")")
+    .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format(".2f")))
+    .selectAll("text").attr("font-size","9px");
+
+  // Zero line
+  svg.append("line")
+    .attr("x1", xScale(0)).attr("y1", 0)
+    .attr("x2", xScale(0)).attr("y2", h)
+    .attr("stroke","#888888").attr("stroke-width","1");
+
+  svg.selectAll(".bar")
+    .data(sorted)
+    .enter().append("rect")
+    .attr("class","bar")
+    .attr("x", function(d) { return d._gap >= 0 ? xScale(0) : xScale(d._gap||0); })
+    .attr("y", function(d) { return yScale(d.State); })
+    .attr("width", function(d) { return Math.abs(xScale(d._gap||0) - xScale(0)); })
+    .attr("height", yScale.bandwidth())
+    .attr("fill", function(d) { return gapColor(d._gap||0); })
+    .attr("stroke","none")
+    .on("mousemove", function(d) { showTT(d3.event, d); })
+    .on("mouseleave", hideTT)
+    .on("click", function(d) { selectState(d.State); });
+}
+
+function updateBarColors() {
+  d3.selectAll(".bar").attr("fill", function(d) { return gapColor(d._gap || 0); });
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────
+function drawTable() {
+  var sorted = currentData.slice().sort(function(a,b) {
+    var va = a[sortCol] != null ? a[sortCol] : -Infinity;
+    var vb = b[sortCol] != null ? b[sortCol] : -Infinity;
+    return sortAsc ? va - vb : vb - va;
+  });
+
+  var tbody = d3.select("#table-body");
+  tbody.selectAll("tr").remove();
+
+  var rows = tbody.selectAll("tr")
+    .data(sorted)
+    .enter().append("tr")
+    .classed("selected", function(d) { return d.State === selectedState; })
+    .on("click", function(d) { selectState(d.State); });
+
+  rows.append("td").text(function(d) { return d.State; });
+  rows.append("td").text(function(d) { return d._gap != null ? d._gap.toFixed(4) : "-"; })
+    .attr("class", function(d) { return d._gap >= 0 ? "gap-pos" : "gap-neg"; });
+  rows.append("td").text(function(d) { return d._pnorm != null ? d._pnorm.toFixed(4) : "-"; });
+  rows.append("td").text(function(d) { return d._inorm != null ? d._inorm.toFixed(4) : "-"; });
+  rows.append("td").text(function(d) { return d.chargers_per_100k != null ? d.chargers_per_100k.toFixed(1) : "-"; });
+  rows.append("td").text(function(d) { return d.weighted_policy_score != null ? d.weighted_policy_score.toFixed(4) : "-"; });
+  rows.append("td").text(function(d) { return d[recencyField] != null ? d[recencyField].toFixed(4) : "-"; });
+}
+
+function sortTable(col) {
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = false;
+  }
+  drawTable();
+}
+
+function scrollTableToState(state) {
+  var rows = document.querySelectorAll("#table-body tr");
+  rows.forEach(function(row) {
+    if (row.__data__ && row.__data__.State === state) {
+      row.scrollIntoView({ block: "nearest" });
+    }
+  });
+}
+
+// ── RECENCY TOGGLE ────────────────────────────────────────────────
+function setRecency(field, btn) {
+  recencyField = field;
+  document.getElementById("btn-2y").classList.remove("active");
+  document.getElementById("btn-3y").classList.remove("active");
+  btn.classList.add("active");
+
+  computeGapScores();
+  updateMapColors();
+  drawScatter();
+  drawBar();
+  drawTable();
+  updateAllHighlights();
+}
+</script>
+</body>
+</html>
