@@ -270,7 +270,7 @@ var FIPS_STATE = {};
 for (var a in STATE_FIPS) { FIPS_STATE[STATE_FIPS[a]] = a; }
 
 // Color scales
-var GAP_SCALE = d3.scaleDivergingSymlog(d3.interpolateRdBu).domain([0.9, 0, -0.9]);
+var GAP_SCALE = d3.scaleDiverging(d3.interpolateRdBu).domain([0.9, 0, -0.9]);
 
 function gapColor(v) { return GAP_SCALE(-v); }
 
