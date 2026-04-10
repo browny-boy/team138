@@ -170,12 +170,9 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
     <div class="panel-body">
       <svg id="my_dataviz_map"></svg>
       <div id="legend">
-        <div class="leg-item">
-          <div class="leg-dot" style="background:#4575b4"></div>Underserved (positive gap)
-        </div>
-        <div class="leg-item">
-          <div class="leg-dot" style="background:#d73027"></div>Over-built (negative gap)
-        </div>
+        <span style="font-size:10px;color:#d73027;font-weight:bold;">Over-built</span>
+        <div style="flex:1;height:12px;border-radius:3px;background:linear-gradient(to right,#d73027,#f7f7f7,#2166ac);max-width:260px;align-self:center;"></div>
+        <span style="font-size:10px;color:#2166ac;font-weight:bold;">Underserved</span>
         <button id="reset-btn" onclick="resetSelection()">Reset</button>
       </div>
     </div>
@@ -282,6 +279,11 @@ function catColor(d) {
   return d.category === "Underserved" ? "#4575b4" : "#d73027";
 }
 
+// Choropleth color scale — gallery threshold pattern, diverging on gap score
+// Red = over-built (negative), Blue = underserved (positive)
+var colorScale = d3.scaleDiverging(d3.interpolateRdBu)
+  .domain([-1.2, 0, 0.8]);
+
 // ── BUILD HIERARCHY JSON from flat data ───────────────────────────
 // Matches the gallery's expected JSON format: {name, children:[]}
 function buildHierarchy(data) {
@@ -317,10 +319,12 @@ function drawDendro(data) {
   d3.select("#my_dataviz_dendro").selectAll("svg").remove();
 
   var container = document.getElementById("my_dataviz_dendro");
+
+  // set the dimensions and margins of the graph — gallery pattern
   var width  = container.clientWidth;
   var height = container.clientHeight;
 
-  // append the svg object — gallery pattern
+  // append the svg object to the div — gallery pattern
   var svg = d3.select("#my_dataviz_dendro")
     .append("svg")
       .attr("width",  width)
@@ -330,7 +334,7 @@ function drawDendro(data) {
 
   // Create the cluster layout — gallery pattern
   var cluster = d3.cluster()
-    .size([height, width - 160]); // leave right margin for labels
+    .size([height, width - 160]); // 160 is margin I will have on the right side
 
   // Give the data to this cluster layout — gallery pattern
   var root = d3.hierarchy(buildHierarchy(data), function(d) {
@@ -338,42 +342,39 @@ function drawDendro(data) {
   });
   cluster(root);
 
-  // Add the links between nodes — gallery cubic bezier pattern
-  svg.selectAll("path")
+  // Add the links between nodes — gallery pattern
+  // Using class 'dendro-link' instead of plain 'path' to avoid selector conflict
+  svg.selectAll('.dendro-link')
     .data(root.descendants().slice(1))
     .enter()
-    .append("path")
-      .attr("class", "link")
-      .attr("d", function(d) {
-        return "M" + d.y + "," + d.x
-             + "C" + (d.parent.y + 50) + "," + d.x
-             + " " + (d.parent.y + 150) + "," + d.parent.x
-             + " " + d.parent.y + "," + d.parent.x;
-      })
-      .attr("stroke", function(d) {
-        // Color by cluster — walk down to find cluster
-        var node = d;
-        while (!node.data.cluster && node.children) {
-          node = node.children[0];
-        }
-        return node.data.cluster
-          ? CLUSTER_COLORS[node.data.cluster]
-          : "#cccccc";
-      })
-      .attr("stroke-opacity", 0.5)
-      .attr("class", function(d) {
+    .append('path')
+      .attr('class', function(d) {
         var node = d;
         while (!node.data.cluster && node.children) { node = node.children[0]; }
-        return "link link-c" + (node.data.cluster || "0");
-      });
+        return 'dendro-link dendro-link-c' + (node.data.cluster || '0');
+      })
+      .attr("d", function(d) {
+        return "M" + d.y + "," + d.x
+             + "C" + ((d.y + d.parent.y) / 2) + "," + d.x
+             + " " + ((d.y + d.parent.y) / 2) + "," + d.parent.x
+             + " " + d.parent.y + "," + d.parent.x;
+      })
+      .style("fill", 'none')
+      .attr("stroke", function(d) {
+        var node = d;
+        while (!node.data.cluster && node.children) { node = node.children[0]; }
+        return node.data.cluster ? CLUSTER_COLORS[node.data.cluster] : '#cccccc';
+      })
+      .attr("stroke-opacity", 0.5);
 
-  // Add a circle for each node — gallery pattern
-  var node = svg.selectAll("g")
+  // Add a group for each node — gallery pattern
+  // Using class 'dendro-g' to avoid conflict with parent g element
+  var node = svg.selectAll('.dendro-g')
     .data(root.descendants())
     .enter()
-    .append("g")
-      .attr("class", function(d) {
-        return "dendro-node node-c" + (d.data.cluster || "root");
+    .append('g')
+      .attr('class', function(d) {
+        return 'dendro-g dendro-g-c' + (d.data.cluster || 'root');
       })
       .attr("transform", function(d) {
         return "translate(" + d.y + "," + d.x + ")";
@@ -388,9 +389,7 @@ function drawDendro(data) {
         if (d.data.isLeaf) {
           showTT(d3.event, d.data);
         } else if (d.data.cluster) {
-          var states = DATA.filter(function(s) {
-            return s.cluster === d.data.cluster;
-          });
+          var states = DATA.filter(function(s) { return s.cluster === d.data.cluster; });
           tt.style.display = "block";
           tt.style.left = (d3.event.clientX + 14) + "px";
           tt.style.top  = (d3.event.clientY - 10) + "px";
@@ -398,55 +397,44 @@ function drawDendro(data) {
           document.getElementById("tt-gap").textContent     = d3.mean(states, function(s) { return s.gap; }).toFixed(3);
           document.getElementById("tt-cluster").textContent = states.length + " states";
           document.getElementById("tt-infra").textContent   = d3.mean(states, function(s) { return s.infra; }).toFixed(1);
-          document.getElementById("tt-policy").textContent  = d3.mean(states, function(s) { return s.policy; }).toFixed(4);
+          document.getElementById("tt-policy").textContent  = d3.mean(states, function(s) { return s.policy_norm; }).toFixed(4);
           document.getElementById("tt-cat").textContent     = "—";
         }
       })
       .on("mouseleave", hideTT);
 
+  // Add circle for each node — gallery pattern
   node.append("circle")
     .attr("r", function(d) {
       if (d.depth === 0) return 4;
-      return d.data.isLeaf ? 4 : 6;
+      return d.data.isLeaf ? 4 : 7;
     })
     .style("fill", function(d) {
       if (d.depth === 0) return "#999999";
       if (d.data.isLeaf) return catColor(d.data);
       return CLUSTER_COLORS[d.data.cluster];
     })
-    .style("stroke", function(d) {
+    .attr("stroke", function(d) {
       if (d.depth === 0) return "#999999";
-      return d.data.cluster
-        ? CLUSTER_COLORS[d.data.cluster]
-        : "#999999";
+      return d.data.cluster ? CLUSTER_COLORS[d.data.cluster] : "#999999";
     })
-    .style("stroke-width", 1.5);
+    .style("stroke-width", 2);
 
-  // Labels — gallery pattern
+  // Add text labels
   node.append("text")
     .attr("dy", "0.35em")
-    .attr("x", function(d) {
-      return d.data.isLeaf ? 8 : -8;
-    })
-    .attr("text-anchor", function(d) {
-      return d.data.isLeaf ? "start" : "end";
-    })
+    .attr("x", function(d) { return d.data.isLeaf ? 10 : -10; })
+    .attr("text-anchor", function(d) { return d.data.isLeaf ? "start" : "end"; })
     .text(function(d) {
       if (d.depth === 0) return "";
       if (d.data.isLeaf) return d.data.name;
-      return d.data.name; // "C1", "C2" etc
+      return d.data.name;
     })
-    .style("font-size", function(d) {
-      return d.data.isLeaf ? "9px" : "10px";
-    })
-    .style("font-weight", function(d) {
-      return d.data.isLeaf ? "normal" : "bold";
-    })
+    .style("font-size", function(d) { return d.data.isLeaf ? "9px" : "10px"; })
+    .style("font-weight", function(d) { return d.data.isLeaf ? "normal" : "bold"; })
     .style("fill", function(d) {
       if (d.depth === 0) return "#666666";
-      return d.data.cluster
-        ? CLUSTER_COLORS[d.data.cluster]
-        : "#444444";
+      return d.data.cluster ? CLUSTER_COLORS[d.data.cluster] : "#444444";
     });
 }
 
@@ -489,11 +477,11 @@ function drawMap(us) {
     .append("path")
       .attr("class", "state-path")
       .attr("d", path)
-      // set the color of each state — gallery pattern
+      // set the color of each state — gallery pattern with diverging scale
       .attr("fill", function(d) {
         var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
         var sd = byState[abbr];
-        return sd ? catColor(sd) : "#dddddd";
+        return sd ? colorScale(sd.gap) : "#dddddd";
       })
       .attr("opacity", 0.85)
       .on("mousemove", function(d) {
@@ -565,30 +553,30 @@ function updateHighlight() {
     });
 
   // Dendrogram node opacity
-  d3.selectAll(".dendro-node circle")
+  d3.selectAll(".dendro-g circle")
     .style("opacity", function() {
       if (c === null) return 1;
       var nodeClass = d3.select(this.parentNode).attr("class") || "";
-      var match = nodeClass.match(/node-c(\d+)/);
+      var match = nodeClass.match(/dendro-g-c(\d+)/);
       if (!match) return 0.2;
       return +match[1] === c ? 1 : 0.15;
     });
 
-  d3.selectAll(".dendro-node text")
+  d3.selectAll(".dendro-g text")
     .style("opacity", function() {
       if (c === null) return 1;
       var nodeClass = d3.select(this.parentNode).attr("class") || "";
-      var match = nodeClass.match(/node-c(\d+)/);
+      var match = nodeClass.match(/dendro-g-c(\d+)/);
       if (!match) return 0.2;
       return +match[1] === c ? 1 : 0.15;
     });
 
   // Dendrogram link opacity
-  d3.selectAll(".link")
+  d3.selectAll(".dendro-link")
     .attr("stroke-opacity", function() {
       if (c === null) return 0.5;
       var linkClass = d3.select(this).attr("class") || "";
-      return linkClass.indexOf("link-c" + c) >= 0 ? 0.9 : 0.06;
+      return linkClass.indexOf("dendro-link-c" + c) >= 0 ? 0.9 : 0.06;
     });
 
   updateStats(c);
