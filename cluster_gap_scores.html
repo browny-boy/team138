@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EV Gap Score Clustering Dashboard - Team 138</title>
 
-<!-- Load d3.js and topojson — same as gallery -->
 <script src="./lib/d3.v5.min.js"></script>
 <script src="./lib/topojson.v2.min.js"></script>
 
@@ -129,7 +128,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 #tooltip .tt-row   { display: flex; justify-content: space-between; gap: 8px; color: #555555; }
 #tooltip .tt-row span:last-child { color: #222222; font-weight: bold; }
 
-/* Choropleth — gallery style */
 .state-path {
   stroke: #ffffff;
   stroke-width: 0.5px;
@@ -141,7 +139,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 .state-path.selected { stroke: #333333; stroke-width: 2px; }
 .state-border { fill: none; stroke: #ffffff; stroke-width: 0.8px; pointer-events: none; }
 
-/* Dendrogram — gallery style */
 .link { fill: none; stroke: #cccccc; stroke-width: 1px; }
 </style>
 </head>
@@ -222,7 +219,7 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 </div>
 
 <script>
-// ── CONSTANTS ─────────────────────────────────────────────────────
+
 var CLUSTER_NAMES = {
   1: "Over-built (high infra)",
   2: "High gap — most underserved",
@@ -279,7 +276,7 @@ function catColor(d) {
   return d.category === "Underserved" ? "#4575b4" : "#d73027";
 }
 
-// Choropleth color scale — gallery threshold pattern, diverging on gap score
+// Choropleth color scale
 // Red = over-built (negative), Blue = underserved (positive)
 var colorScale = d3.scaleDiverging(d3.interpolateRdBu)
   .domain([-1.2, 0, 0.8]);
@@ -313,7 +310,7 @@ function buildHierarchy(data) {
   };
 }
 
-// ── DENDROGRAM — exact gallery pattern ────────────────────────────
+// ── DENDROGRAM 
 // Source: https://d3-graph-gallery.com/graph/dendrogram_basic.html
 function drawDendro(data) {
   d3.select("#my_dataviz_dendro").selectAll("svg").remove();
@@ -324,7 +321,7 @@ function drawDendro(data) {
   var width  = container.clientWidth;
   var height = container.clientHeight;
 
-  // append the svg object to the div — gallery pattern
+  // append the svg object to the div
   var svg = d3.select("#my_dataviz_dendro")
     .append("svg")
       .attr("width",  width)
@@ -332,18 +329,16 @@ function drawDendro(data) {
     .append("g")
       .attr("transform", "translate(40,0)"); // bit of margin on the left = 40
 
-  // Create the cluster layout — gallery pattern
+  // Create the cluster layout
   var cluster = d3.cluster()
-    .size([height, width - 160]); // 160 is margin I will have on the right side
+    .size([height, width - 160]); 
 
-  // Give the data to this cluster layout — gallery pattern
   var root = d3.hierarchy(buildHierarchy(data), function(d) {
     return d.children;
   });
   cluster(root);
 
-  // Add the links between nodes — gallery pattern
-  // Using class 'dendro-link' instead of plain 'path' to avoid selector conflict
+  
   svg.selectAll('.dendro-link')
     .data(root.descendants().slice(1))
     .enter()
@@ -367,8 +362,6 @@ function drawDendro(data) {
       })
       .attr("stroke-opacity", 0.5);
 
-  // Add a group for each node — gallery pattern
-  // Using class 'dendro-g' to avoid conflict with parent g element
   var node = svg.selectAll('.dendro-g')
     .data(root.descendants())
     .enter()
@@ -403,7 +396,7 @@ function drawDendro(data) {
       })
       .on("mouseleave", hideTT);
 
-  // Add circle for each node — gallery pattern
+  // Add circle for each node
   node.append("circle")
     .attr("r", function(d) {
       if (d.depth === 0) return 4;
@@ -438,20 +431,17 @@ function drawDendro(data) {
     });
 }
 
-// ── CHOROPLETH — exact gallery pattern ────────────────────────────
-// Source: https://d3-graph-gallery.com/graph/choropleth_basic.html
+// ── CHOROPLETH 
 function drawMap(us) {
   var wrap = document.getElementById("panel-map").querySelector(".panel-body");
   var width  = wrap.clientWidth;
   var height = wrap.clientHeight - 32; // minus legend
 
-  // The svg — gallery pattern
   var svg = d3.select("#my_dataviz_map")
     .attr("width",  width)
     .attr("height", height);
   svg.selectAll("*").remove();
 
-  // Map and projection — gallery pattern adapted for AlbersUSA
   var projection = d3.geoAlbersUsa().scale(1).translate([0, 0]);
   var path = d3.geoPath().projection(projection);
 
@@ -469,7 +459,7 @@ function drawMap(us) {
   ];
   projection.scale(s).translate(t);
 
-  // Draw the map — gallery pattern
+  // Draw the map
   svg.append("g")
     .selectAll("path")
     .data(states.features)
@@ -611,9 +601,7 @@ function showTT(e, d) {
 
 function hideTT() { tt.style.display = "none"; }
 
-// ── LOAD DATA — gallery queue pattern ─────────────────────────────
-// Source: gallery uses d3.queue() for v4, Promise.all for v5/v6
-// We use Promise.all (d3 v5 compatible)
+// ── LOAD DATA
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
   d3.csv("data/gap_only_clustered.csv")
@@ -622,7 +610,6 @@ Promise.all([
   var us  = results[0];
   var csv = results[1];
 
-  // Parse CSV rows — gallery pattern: map to typed objects
   DATA = csv.map(function(d) {
     return {
       State:       d.State,
