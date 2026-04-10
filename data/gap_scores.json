@@ -16,9 +16,12 @@
     "total_incentives": 60,
     "total_policies": 81,
     "policy_score": 0.7407,
+    "weighted_policy_score_2y": 0.231,
     "weighted_policy_score": 0.3414,
     "policy_norm": 0.0914,
     "infra_norm": 0.0362,
+    "policy_norm_2y": 0.0577,
+    "gap_score_2y": 0.0215,
     "gap_score": 0.0552
   },
   {
@@ -38,9 +41,12 @@
     "total_incentives": 62,
     "total_policies": 85,
     "policy_score": 0.7294,
+    "weighted_policy_score_2y": 0.2275,
     "weighted_policy_score": 0.3362,
     "policy_norm": 0.0697,
     "infra_norm": 0.0808,
+    "policy_norm_2y": 0.0448,
+    "gap_score_2y": -0.036,
     "gap_score": -0.0111
   },
   {
@@ -60,9 +66,12 @@
     "total_incentives": 63,
     "total_policies": 87,
     "policy_score": 0.7241,
+    "weighted_policy_score_2y": 0.3188,
     "weighted_policy_score": 0.4197,
     "policy_norm": 0.4184,
     "infra_norm": 0.0857,
+    "policy_norm_2y": 0.3802,
+    "gap_score_2y": 0.2945,
     "gap_score": 0.3327
   },
   {
@@ -82,9 +91,12 @@
     "total_incentives": 65,
     "total_policies": 93,
     "policy_score": 0.6989,
+    "weighted_policy_score_2y": 0.2153,
     "weighted_policy_score": 0.3195,
     "policy_norm": 0.0,
     "infra_norm": 0.2048,
+    "policy_norm_2y": 0.0,
+    "gap_score_2y": -0.2048,
     "gap_score": -0.2048
   },
   {
@@ -104,9 +116,12 @@
     "total_incentives": 94,
     "total_policies": 174,
     "policy_score": 0.5402,
+    "weighted_policy_score_2y": 0.3733,
     "weighted_policy_score": 0.4226,
     "policy_norm": 0.4305,
     "infra_norm": 0.5338,
+    "policy_norm_2y": 0.5805,
+    "gap_score_2y": 0.0467,
     "gap_score": -0.1033
   },
   {
@@ -126,9 +141,12 @@
     "total_incentives": 73,
     "total_policies": 119,
     "policy_score": 0.6134,
+    "weighted_policy_score_2y": 0.3452,
     "weighted_policy_score": 0.4185,
     "policy_norm": 0.4134,
     "infra_norm": 0.5394,
+    "policy_norm_2y": 0.4772,
+    "gap_score_2y": -0.0622,
     "gap_score": -0.126
   },
   {
@@ -148,9 +166,12 @@
     "total_incentives": 66,
     "total_policies": 107,
     "policy_score": 0.6168,
+    "weighted_policy_score_2y": 0.2885,
     "weighted_policy_score": 0.3722,
     "policy_norm": 0.22,
     "infra_norm": 0.4671,
+    "policy_norm_2y": 0.2689,
+    "gap_score_2y": -0.1982,
     "gap_score": -0.2471
   },
   {
@@ -170,9 +191,12 @@
     "total_incentives": 63,
     "total_policies": 99,
     "policy_score": 0.6364,
+    "weighted_policy_score_2y": 0.4398,
     "weighted_policy_score": 0.4978,
     "policy_norm": 0.7445,
     "infra_norm": 0.7391,
+    "policy_norm_2y": 0.8248,
+    "gap_score_2y": 0.0857,
     "gap_score": 0.0054
   },
   {
@@ -192,9 +216,12 @@
     "total_incentives": 66,
     "total_policies": 92,
     "policy_score": 0.7174,
+    "weighted_policy_score_2y": 0.4531,
     "weighted_policy_score": 0.5286,
     "policy_norm": 0.8731,
     "infra_norm": 0.2421,
+    "policy_norm_2y": 0.8736,
+    "gap_score_2y": 0.6315,
     "gap_score": 0.631
   },
   {
@@ -214,9 +241,12 @@
     "total_incentives": 62,
     "total_policies": 88,
     "policy_score": 0.7045,
+    "weighted_policy_score_2y": 0.4071,
     "weighted_policy_score": 0.4893,
     "policy_norm": 0.709,
     "infra_norm": 0.1907,
+    "policy_norm_2y": 0.7046,
+    "gap_score_2y": 0.5139,
     "gap_score": 0.5183
   },
   {
@@ -236,9 +266,12 @@
     "total_incentives": 66,
     "total_policies": 90,
     "policy_score": 0.7333,
+    "weighted_policy_score_2y": 0.4003,
     "weighted_policy_score": 0.4904,
     "policy_norm": 0.7136,
     "infra_norm": 0.2071,
+    "policy_norm_2y": 0.6796,
+    "gap_score_2y": 0.4725,
     "gap_score": 0.5065
   },
   {
@@ -258,9 +291,12 @@
     "total_incentives": 62,
     "total_policies": 96,
     "policy_score": 0.6458,
+    "weighted_policy_score_2y": 0.3596,
     "weighted_policy_score": 0.4376,
     "policy_norm": 0.4931,
     "infra_norm": 0.284,
+    "policy_norm_2y": 0.5301,
+    "gap_score_2y": 0.2461,
     "gap_score": 0.2091
   },
   {
@@ -280,9 +316,12 @@
     "total_incentives": 63,
     "total_policies": 90,
     "policy_score": 0.7,
+    "weighted_policy_score_2y": 0.2942,
     "weighted_policy_score": 0.3934,
     "policy_norm": 0.3086,
     "infra_norm": 0.1102,
+    "policy_norm_2y": 0.2899,
+    "gap_score_2y": 0.1797,
     "gap_score": 0.1984
   },
   {
@@ -302,9 +341,12 @@
     "total_incentives": 61,
     "total_policies": 81,
     "policy_score": 0.7531,
+    "weighted_policy_score_2y": 0.2349,
     "weighted_policy_score": 0.3471,
     "policy_norm": 0.1152,
     "infra_norm": 0.1015,
+    "policy_norm_2y": 0.072,
+    "gap_score_2y": -0.0295,
     "gap_score": 0.0137
   },
   {
@@ -324,9 +366,12 @@
     "total_incentives": 69,
     "total_policies": 103,
     "policy_score": 0.6699,
+    "weighted_policy_score_2y": 0.4304,
     "weighted_policy_score": 0.4992,
     "policy_norm": 0.7503,
     "infra_norm": 0.0768,
+    "policy_norm_2y": 0.7902,
+    "gap_score_2y": 0.7134,
     "gap_score": 0.6735
   },
   {
@@ -346,9 +391,12 @@
     "total_incentives": 63,
     "total_policies": 91,
     "policy_score": 0.6923,
+    "weighted_policy_score_2y": 0.3646,
     "weighted_policy_score": 0.452,
     "policy_norm": 0.5532,
     "infra_norm": 0.0515,
+    "policy_norm_2y": 0.5485,
+    "gap_score_2y": 0.497,
     "gap_score": 0.5017
   },
   {
@@ -368,9 +416,12 @@
     "total_incentives": 60,
     "total_policies": 81,
     "policy_score": 0.7407,
+    "weighted_policy_score_2y": 0.2282,
     "weighted_policy_score": 0.3386,
     "policy_norm": 0.0797,
     "infra_norm": 0.1633,
+    "policy_norm_2y": 0.0474,
+    "gap_score_2y": -0.1159,
     "gap_score": -0.0836
   },
   {
@@ -390,9 +441,12 @@
     "total_incentives": 62,
     "total_policies": 87,
     "policy_score": 0.7126,
+    "weighted_policy_score_2y": 0.4224,
     "weighted_policy_score": 0.5034,
     "policy_norm": 0.7678,
     "infra_norm": 0.0322,
+    "policy_norm_2y": 0.7608,
+    "gap_score_2y": 0.7286,
     "gap_score": 0.7356
   },
   {
@@ -412,9 +466,12 @@
     "total_incentives": 61,
     "total_policies": 83,
     "policy_score": 0.7349,
+    "weighted_policy_score_2y": 0.4092,
     "weighted_policy_score": 0.498,
     "policy_norm": 0.7453,
     "infra_norm": 0.0,
+    "policy_norm_2y": 0.7123,
+    "gap_score_2y": 0.7123,
     "gap_score": 0.7453
   },
   {
@@ -434,9 +491,12 @@
     "total_incentives": 71,
     "total_policies": 113,
     "policy_score": 0.6283,
+    "weighted_policy_score_2y": 0.2859,
     "weighted_policy_score": 0.3723,
     "policy_norm": 0.2205,
     "infra_norm": 0.7171,
+    "policy_norm_2y": 0.2594,
+    "gap_score_2y": -0.4577,
     "gap_score": -0.4966
   },
   {
@@ -456,9 +516,12 @@
     "total_incentives": 68,
     "total_policies": 104,
     "policy_score": 0.6538,
+    "weighted_policy_score_2y": 0.3876,
     "weighted_policy_score": 0.4618,
     "policy_norm": 0.5942,
     "infra_norm": 0.2686,
+    "policy_norm_2y": 0.633,
+    "gap_score_2y": 0.3644,
     "gap_score": 0.3256
   },
   {
@@ -478,9 +541,12 @@
     "total_incentives": 62,
     "total_policies": 93,
     "policy_score": 0.6667,
+    "weighted_policy_score_2y": 0.373,
     "weighted_policy_score": 0.4532,
     "policy_norm": 0.5582,
     "infra_norm": 0.5523,
+    "policy_norm_2y": 0.5794,
+    "gap_score_2y": 0.0271,
     "gap_score": 0.0059
   },
   {
@@ -500,9 +566,12 @@
     "total_incentives": 66,
     "total_policies": 90,
     "policy_score": 0.7333,
+    "weighted_policy_score_2y": 0.3992,
     "weighted_policy_score": 0.4895,
     "policy_norm": 0.7098,
     "infra_norm": 0.1735,
+    "policy_norm_2y": 0.6756,
+    "gap_score_2y": 0.5021,
     "gap_score": 0.5363
   },
   {
@@ -522,9 +591,12 @@
     "total_incentives": 65,
     "total_policies": 92,
     "policy_score": 0.7065,
+    "weighted_policy_score_2y": 0.2955,
     "weighted_policy_score": 0.3958,
     "policy_norm": 0.3186,
     "infra_norm": 0.1493,
+    "policy_norm_2y": 0.2946,
+    "gap_score_2y": 0.1453,
     "gap_score": 0.1693
   },
   {
@@ -544,9 +616,12 @@
     "total_incentives": 62,
     "total_policies": 85,
     "policy_score": 0.7294,
+    "weighted_policy_score_2y": 0.4453,
     "weighted_policy_score": 0.5254,
     "policy_norm": 0.8597,
     "infra_norm": 0.1972,
+    "policy_norm_2y": 0.845,
+    "gap_score_2y": 0.6478,
     "gap_score": 0.6625
   },
   {
@@ -566,9 +641,12 @@
     "total_incentives": 61,
     "total_policies": 85,
     "policy_score": 0.7176,
+    "weighted_policy_score_2y": 0.4015,
     "weighted_policy_score": 0.4878,
     "policy_norm": 0.7027,
     "infra_norm": 0.0136,
+    "policy_norm_2y": 0.6841,
+    "gap_score_2y": 0.6705,
     "gap_score": 0.6891
   },
   {
@@ -588,9 +666,12 @@
     "total_incentives": 61,
     "total_policies": 85,
     "policy_score": 0.7176,
+    "weighted_policy_score_2y": 0.2901,
     "weighted_policy_score": 0.393,
     "policy_norm": 0.3069,
     "infra_norm": 0.1068,
+    "policy_norm_2y": 0.2748,
+    "gap_score_2y": 0.168,
     "gap_score": 0.2001
   },
   {
@@ -610,9 +691,12 @@
     "total_incentives": 66,
     "total_policies": 100,
     "policy_score": 0.66,
+    "weighted_policy_score_2y": 0.3027,
     "weighted_policy_score": 0.3931,
     "policy_norm": 0.3073,
     "infra_norm": 0.1594,
+    "policy_norm_2y": 0.3211,
+    "gap_score_2y": 0.1617,
     "gap_score": 0.1479
   },
   {
@@ -632,9 +716,12 @@
     "total_incentives": 61,
     "total_policies": 84,
     "policy_score": 0.7262,
+    "weighted_policy_score_2y": 0.2843,
     "weighted_policy_score": 0.3893,
     "policy_norm": 0.2914,
     "infra_norm": 0.0925,
+    "policy_norm_2y": 0.2535,
+    "gap_score_2y": 0.161,
     "gap_score": 0.1989
   },
   {
@@ -654,9 +741,12 @@
     "total_incentives": 61,
     "total_policies": 85,
     "policy_score": 0.7176,
+    "weighted_policy_score_2y": 0.4234,
     "weighted_policy_score": 0.5053,
     "policy_norm": 0.7758,
     "infra_norm": 0.1138,
+    "policy_norm_2y": 0.7645,
+    "gap_score_2y": 0.6507,
     "gap_score": 0.662
   },
   {
@@ -676,9 +766,12 @@
     "total_incentives": 61,
     "total_policies": 90,
     "policy_score": 0.6778,
+    "weighted_policy_score_2y": 0.3024,
     "weighted_policy_score": 0.3964,
     "policy_norm": 0.3211,
     "infra_norm": 0.1994,
+    "policy_norm_2y": 0.32,
+    "gap_score_2y": 0.1206,
     "gap_score": 0.1217
   },
   {
@@ -698,9 +791,12 @@
     "total_incentives": 72,
     "total_policies": 113,
     "policy_score": 0.6372,
+    "weighted_policy_score_2y": 0.4256,
     "weighted_policy_score": 0.4873,
     "policy_norm": 0.7006,
     "infra_norm": 0.1526,
+    "policy_norm_2y": 0.7726,
+    "gap_score_2y": 0.62,
     "gap_score": 0.548
   },
   {
@@ -720,9 +816,12 @@
     "total_incentives": 64,
     "total_policies": 92,
     "policy_score": 0.6957,
+    "weighted_policy_score_2y": 0.3664,
     "weighted_policy_score": 0.4542,
     "policy_norm": 0.5624,
     "infra_norm": 0.2054,
+    "policy_norm_2y": 0.5551,
+    "gap_score_2y": 0.3497,
     "gap_score": 0.357
   },
   {
@@ -742,9 +841,12 @@
     "total_incentives": 63,
     "total_policies": 92,
     "policy_score": 0.6848,
+    "weighted_policy_score_2y": 0.2944,
     "weighted_policy_score": 0.3907,
     "policy_norm": 0.2973,
     "infra_norm": 0.1884,
+    "policy_norm_2y": 0.2906,
+    "gap_score_2y": 0.1022,
     "gap_score": 0.1089
   },
   {
@@ -764,9 +866,12 @@
     "total_incentives": 70,
     "total_policies": 106,
     "policy_score": 0.6604,
+    "weighted_policy_score_2y": 0.3089,
     "weighted_policy_score": 0.3985,
     "policy_norm": 0.3299,
     "infra_norm": 0.2548,
+    "policy_norm_2y": 0.3439,
+    "gap_score_2y": 0.0891,
     "gap_score": 0.0751
   },
   {
@@ -786,9 +891,12 @@
     "total_incentives": 63,
     "total_policies": 86,
     "policy_score": 0.7326,
+    "weighted_policy_score_2y": 0.4685,
     "weighted_policy_score": 0.5442,
     "policy_norm": 0.9382,
     "infra_norm": 0.1318,
+    "policy_norm_2y": 0.9302,
+    "gap_score_2y": 0.7984,
     "gap_score": 0.8064
   },
   {
@@ -808,9 +916,12 @@
     "total_incentives": 65,
     "total_policies": 95,
     "policy_score": 0.6842,
+    "weighted_policy_score_2y": 0.2865,
     "weighted_policy_score": 0.3836,
     "policy_norm": 0.2676,
     "infra_norm": 0.0556,
+    "policy_norm_2y": 0.2616,
+    "gap_score_2y": 0.206,
     "gap_score": 0.212
   },
   {
@@ -830,9 +941,12 @@
     "total_incentives": 66,
     "total_policies": 104,
     "policy_score": 0.6346,
+    "weighted_policy_score_2y": 0.3551,
     "weighted_policy_score": 0.4314,
     "policy_norm": 0.4672,
     "infra_norm": 0.4557,
+    "policy_norm_2y": 0.5136,
+    "gap_score_2y": 0.0579,
     "gap_score": 0.0115
   },
   {
@@ -852,9 +966,12 @@
     "total_incentives": 66,
     "total_policies": 90,
     "policy_score": 0.7333,
+    "weighted_policy_score_2y": 0.4875,
     "weighted_policy_score": 0.559,
     "policy_norm": 1.0,
     "infra_norm": 0.1123,
+    "policy_norm_2y": 1.0,
+    "gap_score_2y": 0.8877,
     "gap_score": 0.8877
   },
   {
@@ -874,9 +991,12 @@
     "total_incentives": 64,
     "total_policies": 96,
     "policy_score": 0.6667,
+    "weighted_policy_score_2y": 0.3377,
     "weighted_policy_score": 0.4242,
     "policy_norm": 0.4372,
     "infra_norm": 0.3493,
+    "policy_norm_2y": 0.4497,
+    "gap_score_2y": 0.1004,
     "gap_score": 0.0879
   },
   {
@@ -896,9 +1016,12 @@
     "total_incentives": 64,
     "total_policies": 91,
     "policy_score": 0.7033,
+    "weighted_policy_score_2y": 0.235,
     "weighted_policy_score": 0.3394,
     "policy_norm": 0.0831,
     "infra_norm": 0.099,
+    "policy_norm_2y": 0.0724,
+    "gap_score_2y": -0.0266,
     "gap_score": -0.0159
   },
   {
@@ -918,9 +1041,12 @@
     "total_incentives": 61,
     "total_policies": 82,
     "policy_score": 0.7439,
+    "weighted_policy_score_2y": 0.2292,
     "weighted_policy_score": 0.3401,
     "policy_norm": 0.086,
     "infra_norm": 0.0765,
+    "policy_norm_2y": 0.0511,
+    "gap_score_2y": -0.0254,
     "gap_score": 0.0095
   },
   {
@@ -940,9 +1066,12 @@
     "total_incentives": 61,
     "total_policies": 82,
     "policy_score": 0.7439,
+    "weighted_policy_score_2y": 0.4541,
     "weighted_policy_score": 0.5358,
     "policy_norm": 0.9031,
     "infra_norm": 0.1422,
+    "policy_norm_2y": 0.8773,
+    "gap_score_2y": 0.7351,
     "gap_score": 0.7609
   },
   {
@@ -962,9 +1091,12 @@
     "total_incentives": 69,
     "total_policies": 95,
     "policy_score": 0.7263,
+    "weighted_policy_score_2y": 0.3041,
     "weighted_policy_score": 0.4072,
     "policy_norm": 0.3662,
     "infra_norm": 0.0874,
+    "policy_norm_2y": 0.3262,
+    "gap_score_2y": 0.2388,
     "gap_score": 0.2788
   },
   {
@@ -984,9 +1116,12 @@
     "total_incentives": 66,
     "total_policies": 93,
     "policy_score": 0.7097,
+    "weighted_policy_score_2y": 0.4656,
     "weighted_policy_score": 0.5363,
     "policy_norm": 0.9052,
     "infra_norm": 0.3235,
+    "policy_norm_2y": 0.9195,
+    "gap_score_2y": 0.596,
     "gap_score": 0.5817
   },
   {
@@ -1006,9 +1141,12 @@
     "total_incentives": 66,
     "total_policies": 106,
     "policy_score": 0.6226,
+    "weighted_policy_score_2y": 0.3136,
     "weighted_policy_score": 0.3946,
     "policy_norm": 0.3136,
     "infra_norm": 0.2045,
+    "policy_norm_2y": 0.3611,
+    "gap_score_2y": 0.1566,
     "gap_score": 0.1091
   },
   {
@@ -1028,9 +1166,12 @@
     "total_incentives": 70,
     "total_policies": 104,
     "policy_score": 0.6731,
+    "weighted_policy_score_2y": 0.4129,
     "weighted_policy_score": 0.4864,
     "policy_norm": 0.6969,
     "infra_norm": 1.0,
+    "policy_norm_2y": 0.7259,
+    "gap_score_2y": -0.2741,
     "gap_score": -0.3031
   },
   {
@@ -1050,9 +1191,12 @@
     "total_incentives": 73,
     "total_policies": 120,
     "policy_score": 0.6083,
+    "weighted_policy_score_2y": 0.3938,
     "weighted_policy_score": 0.4556,
     "policy_norm": 0.5683,
     "infra_norm": 0.3979,
+    "policy_norm_2y": 0.6558,
+    "gap_score_2y": 0.2579,
     "gap_score": 0.1704
   },
   {
@@ -1072,9 +1216,12 @@
     "total_incentives": 66,
     "total_policies": 94,
     "policy_score": 0.7021,
+    "weighted_policy_score_2y": 0.4178,
     "weighted_policy_score": 0.4972,
     "policy_norm": 0.742,
     "infra_norm": 0.0908,
+    "policy_norm_2y": 0.7439,
+    "gap_score_2y": 0.6531,
     "gap_score": 0.6512
   },
   {
@@ -1094,9 +1241,12 @@
     "total_incentives": 60,
     "total_policies": 84,
     "policy_score": 0.7143,
+    "weighted_policy_score_2y": 0.2924,
     "weighted_policy_score": 0.3944,
     "policy_norm": 0.3127,
     "infra_norm": 0.0647,
+    "policy_norm_2y": 0.2832,
+    "gap_score_2y": 0.2185,
     "gap_score": 0.248
   },
   {
@@ -1116,9 +1266,12 @@
     "total_incentives": 60,
     "total_policies": 82,
     "policy_score": 0.7317,
+    "weighted_policy_score_2y": 0.2282,
     "weighted_policy_score": 0.3373,
     "policy_norm": 0.0743,
     "infra_norm": 0.1801,
+    "policy_norm_2y": 0.0474,
+    "gap_score_2y": -0.1327,
     "gap_score": -0.1058
   }
 ]
