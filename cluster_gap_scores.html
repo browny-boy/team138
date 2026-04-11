@@ -82,7 +82,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 .stat-value { font-size: 18px; font-weight: bold; color: #222222; }
 .stat-sub   { font-size: 10px; color: #aaaaaa; }
 
-/* Legend */
 #legend {
   display: flex;
   align-items: center;
@@ -111,7 +110,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 }
 #reset-btn:hover { background: #eeeeee; }
 
-/* Tooltip */
 #tooltip {
   position: fixed;
   pointer-events: none;
@@ -153,7 +151,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 
 <div id="main">
 
-  <!-- Dendrogram panel -->
   <div class="panel" id="panel-dendro">
     <div class="panel-title">Dendrogram — Ward linkage on gap score</div>
     <div class="panel-body">
@@ -161,7 +158,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
     </div>
   </div>
 
-  <!-- Choropleth panel -->
   <div class="panel" id="panel-map">
     <div class="panel-title">Choropleth — gap score by state (blue = underserved · red = over-built)</div>
     <div class="panel-body">
@@ -175,7 +171,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
     </div>
   </div>
 
-  <!-- Stats panel -->
   <div class="panel" id="panel-stats">
     <div class="panel-title">Cluster summary — averages for selected cluster</div>
     <div class="panel-body">
@@ -234,7 +229,6 @@ var CLUSTER_COLORS = {
   4: "#74add1"
 };
 
-// FIPS lookup for choropleth
 var FIPS = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09",
   "DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17",
@@ -245,10 +239,10 @@ var FIPS = {
   "TN":"47","TX":"48","UT":"49","VT":"50","VA":"51","WA":"53","WV":"54",
   "WI":"55","WY":"56"
 };
-var FIPS_STATE = {};
-Object.keys(FIPS).forEach(function(a) { FIPS_STATE[FIPS[a]] = a; });
 
-// State label coordinates
+var FIPS_STATE = {};
+Object.keys(FIPS).forEach(function(abbr) { FIPS_STATE[FIPS[abbr]] = abbr; });
+
 var STATE_COORDS = {
   "AL":[86.9,32.8],"AK":[153.4,61.4],"AZ":[111.9,34.3],"AR":[92.4,34.9],
   "CA":[119.7,37.2],"CO":[105.5,39.0],"CT":[72.7,41.6],"DE":[75.5,39.0],
@@ -265,24 +259,17 @@ var STATE_COORDS = {
   "WV":[80.7,38.6],"WI":[89.8,44.5],"WY":[107.6,43.0]
 };
 
-// ── STATE ─────────────────────────────────────────────────────────
-var DATA    = [];
+var DATA = [];
 var byState = {};
 var selectedCluster = null;
 var tt = document.getElementById("tooltip");
 
-// Color by category
 function catColor(d) {
   return d.category === "Underserved" ? "#4575b4" : "#d73027";
 }
 
-// Choropleth color scale
-// Red = over-built (negative), Blue = underserved (positive)
-var colorScale = d3.scaleDiverging(d3.interpolateRdBu)
-  .domain([-1.2, 0, 0.8]);
+var colorScale = d3.scaleDiverging(d3.interpolateRdBu).domain([-1.2, 0, 0.8]);
 
-// ── BUILD HIERARCHY JSON from flat data ───────────────────────────
-// Matches the gallery's expected JSON format: {name, children:[]}
 function buildHierarchy(data) {
   var clusterOrder = [2, 4, 3, 1];
   return {
@@ -310,43 +297,33 @@ function buildHierarchy(data) {
   };
 }
 
-// ── DENDROGRAM 
-// Source: https://d3-graph-gallery.com/graph/dendrogram_basic.html
 function drawDendro(data) {
   d3.select("#my_dataviz_dendro").selectAll("svg").remove();
 
   var container = document.getElementById("my_dataviz_dendro");
-
-  // set the dimensions and margins of the graph — gallery pattern
   var width  = container.clientWidth;
   var height = container.clientHeight;
 
-  // append the svg object to the div
   var svg = d3.select("#my_dataviz_dendro")
     .append("svg")
       .attr("width",  width)
       .attr("height", height)
     .append("g")
-      .attr("transform", "translate(40,0)"); // bit of margin on the left = 40
+      .attr("transform", "translate(40,0)");
 
-  // Create the cluster layout
-  var cluster = d3.cluster()
-    .size([height, width - 160]); 
+  var cluster = d3.cluster().size([height, width - 160]);
 
-  var root = d3.hierarchy(buildHierarchy(data), function(d) {
-    return d.children;
-  });
+  var root = d3.hierarchy(buildHierarchy(data), function(d) { return d.children; });
   cluster(root);
 
-  
-  svg.selectAll('.dendro-link')
+  svg.selectAll(".dendro-link")
     .data(root.descendants().slice(1))
     .enter()
-    .append('path')
-      .attr('class', function(d) {
+    .append("path")
+      .attr("class", function(d) {
         var node = d;
         while (!node.data.cluster && node.children) { node = node.children[0]; }
-        return 'dendro-link dendro-link-c' + (node.data.cluster || '0');
+        return "dendro-link dendro-link-c" + (node.data.cluster || "0");
       })
       .attr("d", function(d) {
         return "M" + d.y + "," + d.x
@@ -354,27 +331,23 @@ function drawDendro(data) {
              + " " + ((d.y + d.parent.y) / 2) + "," + d.parent.x
              + " " + d.parent.y + "," + d.parent.x;
       })
-      .style("fill", 'none')
+      .style("fill", "none")
       .attr("stroke", function(d) {
         var node = d;
         while (!node.data.cluster && node.children) { node = node.children[0]; }
-        return node.data.cluster ? CLUSTER_COLORS[node.data.cluster] : '#cccccc';
+        return node.data.cluster ? CLUSTER_COLORS[node.data.cluster] : "#cccccc";
       })
       .attr("stroke-opacity", 0.5);
 
-  var node = svg.selectAll('.dendro-g')
+  var node = svg.selectAll(".dendro-g")
     .data(root.descendants())
     .enter()
-    .append('g')
-      .attr('class', function(d) {
-        return 'dendro-g dendro-g-c' + (d.data.cluster || 'root');
+    .append("g")
+      .attr("class", function(d) {
+        return "dendro-g dendro-g-c" + (d.data.cluster || "root");
       })
-      .attr("transform", function(d) {
-        return "translate(" + d.y + "," + d.x + ")";
-      })
-      .style("cursor", function(d) {
-        return d.data.cluster ? "pointer" : "default";
-      })
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      .style("cursor", function(d) { return d.data.cluster ? "pointer" : "default"; })
       .on("click", function(d) {
         if (d.data.cluster) toggleCluster(d.data.cluster);
       })
@@ -396,7 +369,6 @@ function drawDendro(data) {
       })
       .on("mouseleave", hideTT);
 
-  // Add circle for each node
   node.append("circle")
     .attr("r", function(d) {
       if (d.depth === 0) return 4;
@@ -413,14 +385,12 @@ function drawDendro(data) {
     })
     .style("stroke-width", 2);
 
-  // Add text labels
   node.append("text")
     .attr("dy", "0.35em")
     .attr("x", function(d) { return d.data.isLeaf ? 10 : -10; })
     .attr("text-anchor", function(d) { return d.data.isLeaf ? "start" : "end"; })
     .text(function(d) {
       if (d.depth === 0) return "";
-      if (d.data.isLeaf) return d.data.name;
       return d.data.name;
     })
     .style("font-size", function(d) { return d.data.isLeaf ? "9px" : "10px"; })
@@ -431,11 +401,10 @@ function drawDendro(data) {
     });
 }
 
-// ── CHOROPLETH 
 function drawMap(us) {
-  var wrap = document.getElementById("panel-map").querySelector(".panel-body");
+  var wrap  = document.getElementById("panel-map").querySelector(".panel-body");
   var width  = wrap.clientWidth;
-  var height = wrap.clientHeight - 32; // minus legend
+  var height = wrap.clientHeight - 32;
 
   var svg = d3.select("#my_dataviz_map")
     .attr("width",  width)
@@ -444,10 +413,8 @@ function drawMap(us) {
 
   var projection = d3.geoAlbersUsa().scale(1).translate([0, 0]);
   var path = d3.geoPath().projection(projection);
-
   var states = topojson.feature(us, us.objects.states);
 
-  // Fit to container
   var b = path.bounds(states);
   var s = 0.92 / Math.max(
     (b[1][0] - b[0][0]) / width,
@@ -459,7 +426,6 @@ function drawMap(us) {
   ];
   projection.scale(s).translate(t);
 
-  // Draw the map
   svg.append("g")
     .selectAll("path")
     .data(states.features)
@@ -467,7 +433,6 @@ function drawMap(us) {
     .append("path")
       .attr("class", "state-path")
       .attr("d", path)
-      // set the color of each state — gallery pattern with diverging scale
       .attr("fill", function(d) {
         var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
         var sd = byState[abbr];
@@ -486,15 +451,11 @@ function drawMap(us) {
         if (sd) toggleCluster(sd.cluster);
       });
 
-  // State borders
   svg.append("path")
-    .datum(topojson.mesh(us, us.objects.states, function(a, b) {
-      return a !== b;
-    }))
+    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
     .attr("class", "state-border")
     .attr("d", path);
 
-  // State abbreviation labels
   DATA.forEach(function(d) {
     var c = STATE_COORDS[d.State];
     if (!c) return;
@@ -513,7 +474,6 @@ function drawMap(us) {
   });
 }
 
-// ── INTERACTIONS ──────────────────────────────────────────────────
 function toggleCluster(c) {
   selectedCluster = (selectedCluster === c) ? null : c;
   updateHighlight();
@@ -527,7 +487,6 @@ function resetSelection() {
 function updateHighlight() {
   var c = selectedCluster;
 
-  // Choropleth state opacity
   d3.selectAll(".state-path")
     .classed("dimmed", function(d) {
       if (c === null) return false;
@@ -542,7 +501,6 @@ function updateHighlight() {
       return sd && sd.cluster === c;
     });
 
-  // Dendrogram node opacity
   d3.selectAll(".dendro-g circle")
     .style("opacity", function() {
       if (c === null) return 1;
@@ -561,7 +519,6 @@ function updateHighlight() {
       return +match[1] === c ? 1 : 0.15;
     });
 
-  // Dendrogram link opacity
   d3.selectAll(".dendro-link")
     .attr("stroke-opacity", function() {
       if (c === null) return 0.5;
@@ -601,12 +558,10 @@ function showTT(e, d) {
 
 function hideTT() { tt.style.display = "none"; }
 
-// ── LOAD DATA
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
   d3.csv("data/gap_only_clustered.csv")
 ]).then(function(results) {
-
   var us  = results[0];
   var csv = results[1];
 
@@ -621,10 +576,8 @@ Promise.all([
     };
   });
 
-  // Build state lookup
   DATA.forEach(function(d) { byState[d.State] = d; });
 
-  // Draw both views
   drawDendro(DATA);
   drawMap(us);
   updateStats(null);
@@ -634,7 +587,6 @@ Promise.all([
   alert("Could not load data. Make sure gap_only_clustered.csv is in the data/ folder.");
 });
 
-// Redraw dendrogram on resize
 window.addEventListener("resize", function() {
   if (DATA.length) drawDendro(DATA);
 });
