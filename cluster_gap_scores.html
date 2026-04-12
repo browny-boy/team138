@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EV Gap Score Clustering Dashboard - Team 138</title>
 
 <script src="./lib/d3.v5.min.js"></script>
 <script src="./lib/topojson.v2.min.js"></script>
 
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   background: #ffffff;
@@ -31,8 +35,17 @@ header {
   background: #f5f5f5;
   flex-shrink: 0;
 }
-header h1 { font-size: 14px; font-weight: bold; }
-header p  { font-size: 11px; color: #666666; margin-top: 2px; }
+
+header h1 {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+header p {
+  font-size: 11px;
+  color: #666666;
+  margin-top: 2px;
+}
 
 #main {
   flex: 1;
@@ -61,7 +74,10 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 
 .panel-body {
   position: absolute;
-  top: 28px; left: 0; right: 0; bottom: 0;
+  top: 28px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
 }
 
@@ -77,10 +93,26 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
   gap: 40px;
 }
 
-.stat-block { text-align: center; }
-.stat-label { font-size: 10px; color: #888888; margin-bottom: 2px; }
-.stat-value { font-size: 18px; font-weight: bold; color: #222222; }
-.stat-sub   { font-size: 10px; color: #aaaaaa; }
+.stat-block {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #888888;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #222222;
+}
+
+.stat-sub {
+  font-size: 10px;
+  color: #aaaaaa;
+}
 
 #legend {
   display: flex;
@@ -90,14 +122,12 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
   border-top: 1px solid #eeeeee;
   background: #f9f9f9;
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 32px;
 }
-.leg-item {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 10px; color: #555555;
-}
-.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+
 #reset-btn {
   margin-left: auto;
   font-size: 11px;
@@ -108,7 +138,10 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
   cursor: pointer;
   color: #444444;
 }
-#reset-btn:hover { background: #eeeeee; }
+
+#reset-btn:hover {
+  background: #eeeeee;
+}
 
 #tooltip {
   position: fixed;
@@ -122,22 +155,62 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
   z-index: 1000;
   line-height: 1.6;
 }
-#tooltip .tt-title { font-weight: bold; margin-bottom: 3px; font-size: 12px; }
-#tooltip .tt-row   { display: flex; justify-content: space-between; gap: 8px; color: #555555; }
-#tooltip .tt-row span:last-child { color: #222222; font-weight: bold; }
 
-.state-path {
+#tooltip .tt-title {
+  font-weight: bold;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+
+#tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #555555;
+}
+
+#tooltip .tt-row span:last-child {
+  color: #222222;
+  font-weight: bold;
+}
+
+.state-shape {
   stroke: #ffffff;
   stroke-width: 0.5px;
   cursor: pointer;
   transition: opacity 0.2s;
 }
-.state-path:hover   { stroke: #333333; stroke-width: 1.5px; }
-.state-path.dimmed  { opacity: 0.1; }
-.state-path.selected { stroke: #333333; stroke-width: 2px; }
-.state-border { fill: none; stroke: #ffffff; stroke-width: 0.8px; pointer-events: none; }
 
-.link { fill: none; stroke: #cccccc; stroke-width: 1px; }
+.state-shape:hover {
+  stroke: #333333;
+  stroke-width: 1.5px;
+}
+
+.state-shape.dimmed {
+  opacity: 0.1;
+}
+
+.state-shape.selected {
+  stroke: #333333;
+  stroke-width: 2px;
+}
+
+.state-border {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 0.8px;
+  pointer-events: none;
+}
+
+.tree-link {
+  fill: none;
+}
+
+.tree-node text {
+  stroke: white;
+  stroke-width: 3px;
+  paint-order: stroke;
+}
 </style>
 </head>
 <body>
@@ -145,7 +218,7 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 <header>
   <div>
     <h1>EV Infrastructure Gap Score — Hierarchical Clustering Dashboard · Team 138</h1>
-    <p>Ward linkage · Feature: gap score · Click any node, branch or state to highlight cluster</p>
+    <p>Ward linkage · Feature: gap score · Click any node, branch, or state to highlight a cluster</p>
   </div>
 </header>
 
@@ -154,19 +227,19 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
   <div class="panel" id="panel-dendro">
     <div class="panel-title">Dendrogram — Ward linkage on gap score</div>
     <div class="panel-body">
-      <div id="my_dataviz_dendro" style="width:100%;height:100%;"></div>
+      <div id="dendrogram-wrap" style="width:100%;height:100%;"></div>
     </div>
   </div>
 
   <div class="panel" id="panel-map">
     <div class="panel-title">Choropleth — gap score by state (blue = underserved · red = over-built)</div>
     <div class="panel-body">
-      <svg id="my_dataviz_map"></svg>
+      <svg id="map-svg"></svg>
       <div id="legend">
         <span style="font-size:10px;color:#d73027;font-weight:bold;">Over-built</span>
         <div style="flex:1;height:12px;border-radius:3px;background:linear-gradient(to right,#d73027,#f7f7f7,#2166ac);max-width:260px;align-self:center;"></div>
         <span style="font-size:10px;color:#2166ac;font-weight:bold;">Underserved</span>
-        <button id="reset-btn" onclick="resetSelection()">Reset</button>
+        <button id="reset-btn" onclick="clearSelection()">Reset</button>
       </div>
     </div>
   </div>
@@ -176,27 +249,31 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
     <div class="panel-body">
       <div class="stat-block">
         <div class="stat-label">States selected</div>
-        <div class="stat-value" id="s-count">51</div>
+        <div class="stat-value" id="stat-count">51</div>
         <div class="stat-sub">all states</div>
       </div>
+
       <div class="stat-block">
         <div class="stat-label">Avg gap score</div>
-        <div class="stat-value" id="s-gap">—</div>
+        <div class="stat-value" id="stat-gap">—</div>
         <div class="stat-sub">policy − infra</div>
       </div>
+
       <div class="stat-block">
         <div class="stat-label">Avg chargers / 100k</div>
-        <div class="stat-value" id="s-infra">—</div>
+        <div class="stat-value" id="stat-infra">—</div>
         <div class="stat-sub">infrastructure</div>
       </div>
+
       <div class="stat-block">
         <div class="stat-label">Avg policy norm</div>
-        <div class="stat-value" id="s-policy">—</div>
+        <div class="stat-value" id="stat-policy">—</div>
         <div class="stat-sub">recency-weighted</div>
       </div>
+
       <div class="stat-block">
         <div class="stat-label">Cluster</div>
-        <div class="stat-value" id="s-name" style="font-size:12px;color:#555;">All clusters</div>
+        <div class="stat-value" id="stat-name" style="font-size:12px;color:#555;">All clusters</div>
         <div class="stat-sub">&nbsp;</div>
       </div>
     </div>
@@ -214,22 +291,20 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 </div>
 
 <script>
+var LEGEND_HEIGHT = 32;
+var MAP_FIT = 0.93;
+var MAP_SHIFT_X = 0.035;
+var MAP_SHIFT_Y = 0.035;
+var NEVI_PRIORITY_THRESHOLD = 0.3;
 
-var CLUSTER_NAMES = {
-  1: "Over-built (high infra)",
-  2: "High gap — most underserved",
-  3: "Moderately over-built",
-  4: "Low-moderate gap"
+var clusterMeta = {
+  1: { label: "Over-built (high infra)", color: "#d73027" },
+  2: { label: "High gap — most underserved", color: "#4575b4" },
+  3: { label: "Moderately over-built", color: "#f46d43" },
+  4: { label: "Low-moderate gap", color: "#74add1" }
 };
 
-var CLUSTER_COLORS = {
-  1: "#d73027",
-  2: "#4575b4",
-  3: "#f46d43",
-  4: "#74add1"
-};
-
-var FIPS = {
+var stateToFips = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09",
   "DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17",
   "IN":"18","IA":"19","KS":"20","KY":"21","LA":"22","ME":"23","MD":"24",
@@ -240,205 +315,237 @@ var FIPS = {
   "WI":"55","WY":"56"
 };
 
-var FIPS_STATE = {};
-Object.keys(FIPS).forEach(function(abbr) { FIPS_STATE[FIPS[abbr]] = abbr; });
+var fipsToState = {};
+Object.keys(stateToFips).forEach(function(abbr) {
+  fipsToState[stateToFips[abbr]] = abbr;
+});
 
+var stateRows = [];
+var stateLookup = {};
+var activeCluster = null;
+var tooltipEl = document.getElementById("tooltip");
 
+var gapColor = d3.scaleDiverging(d3.interpolateRdBu)
+  .domain([-1.2, 0, 0.8]);
 
-var DATA = [];
-var byState = {};
-var selectedCluster = null;
-var tt = document.getElementById("tooltip");
-
-function catColor(d) {
-  return d.category === "Underserved" ? "#4575b4" : "#d73027";
-}
-
-var colorScale = d3.scaleDiverging(d3.interpolateRdBu).domain([-1.2, 0, 0.8]);
-
-function buildHierarchy(data) {
+function buildClusterTree(rows) {
   var clusterOrder = [2, 4, 3, 1];
-  return {
-    name: "root",
-    children: clusterOrder.map(function(c) {
-      var states = data
-        .filter(function(d) { return d.cluster === c; })
-        .sort(function(a, b) { return b.gap - a.gap; });
-      return {
-        name: "C" + c,
-        cluster: c,
-        children: states.map(function(d) {
-          return {
-            name: d.State,
-            cluster: c,
-            gap: d.gap,
-            infra: d.infra,
-            policy: d.policy_norm,
-            category: d.category,
-            isLeaf: true
-          };
-        })
-      };
-    })
-  };
+  var root = { name: "root", children: [] };
+
+  clusterOrder.forEach(function(clusterId) {
+    var members = rows
+      .filter(function(row) { return row.cluster === clusterId; })
+      .sort(function(a, b) { return b.gap - a.gap; });
+
+    root.children.push({
+      name: "C" + clusterId,
+      cluster: clusterId,
+      children: members.map(function(row) {
+        return {
+          name: row.State,
+          cluster: row.cluster,
+          gap: row.gap,
+          infra: row.infra,
+          policy_norm: row.policy_norm,
+          category: row.category,
+          isLeaf: true
+        };
+      })
+    });
+  });
+
+  return root;
 }
 
-function drawDendro(data) {
-  d3.select("#my_dataviz_dendro").selectAll("svg").remove();
+function renderDendrogram(rows) {
+  d3.select("#dendrogram-wrap").selectAll("svg").remove();
 
-  var container = document.getElementById("my_dataviz_dendro");
-  var width  = container.clientWidth;
+  var container = document.getElementById("dendrogram-wrap");
+  var width = container.clientWidth;
   var height = container.clientHeight;
 
-  var svg = d3.select("#my_dataviz_dendro")
+  if (width < 10 || height < 10) return;
+
+  var svg = d3.select("#dendrogram-wrap")
     .append("svg")
-      .attr("width",  width)
-      .attr("height", height)
-    .append("g")
-      .attr("transform", "translate(40,0)");
+    .attr("width", width)
+    .attr("height", height);
 
-  var cluster = d3.cluster().size([height, width - 160]);
+  var g = svg.append("g")
+    .attr("transform", "translate(40,0)");
 
-  var root = d3.hierarchy(buildHierarchy(data), function(d) { return d.children; });
-  cluster(root);
+  var root = d3.hierarchy(buildClusterTree(rows));
+  var layout = d3.cluster().size([height, width - 160]);
 
-  svg.selectAll(".dendro-link")
-    .data(root.descendants().slice(1))
+  layout(root);
+
+  g.selectAll(".tree-link")
+    .data(root.links())
     .enter()
     .append("path")
-      .attr("class", function(d) {
-        var node = d;
-        while (!node.data.cluster && node.children) { node = node.children[0]; }
-        return "dendro-link dendro-link-c" + (node.data.cluster || "0");
-      })
-      .attr("d", function(d) {
-        return "M" + d.y + "," + d.x
-             + "C" + ((d.y + d.parent.y) / 2) + "," + d.x
-             + " " + ((d.y + d.parent.y) / 2) + "," + d.parent.x
-             + " " + d.parent.y + "," + d.parent.x;
-      })
-      .style("fill", "none")
-      .attr("stroke", function(d) {
-        var node = d;
-        while (!node.data.cluster && node.children) { node = node.children[0]; }
-        return node.data.cluster ? CLUSTER_COLORS[node.data.cluster] : "#cccccc";
-      })
-      .attr("stroke-opacity", 0.5);
+    .attr("class", function(link) {
+      var node = link.target;
+      while (!node.data.cluster && node.children) node = node.children[0];
+      return "tree-link tree-link-c" + (node.data.cluster || 0);
+    })
+    .attr("d", d3.linkHorizontal()
+      .x(function(d) { return d.y; })
+      .y(function(d) { return d.x; }))
+    .attr("stroke", function(link) {
+      var node = link.target;
+      while (!node.data.cluster && node.children) node = node.children[0];
+      return node.data.cluster ? clusterMeta[node.data.cluster].color : "#cccccc";
+    })
+    .attr("stroke-opacity", 0.5);
 
-  var node = svg.selectAll(".dendro-g")
+  var nodes = g.selectAll(".tree-node")
     .data(root.descendants())
     .enter()
     .append("g")
-      .attr("class", function(d) {
-        return "dendro-g dendro-g-c" + (d.data.cluster || "root");
-      })
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-      .style("cursor", function(d) { return d.data.cluster ? "pointer" : "default"; })
-      .on("click", function(d) {
-        if (d.data.cluster) toggleCluster(d.data.cluster);
-      })
-      .on("mousemove", function(d) {
-        if (d.data.isLeaf) {
-          showTT(d3.event, d.data);
-        } else if (d.data.cluster) {
-          var states = DATA.filter(function(s) { return s.cluster === d.data.cluster; });
-          tt.style.display = "block";
-          tt.style.left = (d3.event.clientX + 14) + "px";
-          tt.style.top  = (d3.event.clientY - 10) + "px";
-          document.getElementById("tt-title").textContent   = CLUSTER_NAMES[d.data.cluster];
-          document.getElementById("tt-gap").textContent     = d3.mean(states, function(s) { return s.gap; }).toFixed(3);
-          document.getElementById("tt-cluster").textContent = states.length + " states";
-          document.getElementById("tt-infra").textContent   = d3.mean(states, function(s) { return s.infra; }).toFixed(1);
-          document.getElementById("tt-policy").textContent  = d3.mean(states, function(s) { return s.policy_norm; }).toFixed(4);
-          document.getElementById("tt-cat").textContent     = "—";
-        }
-      })
-      .on("mouseleave", hideTT);
+    .attr("class", function(d) {
+      return "tree-node tree-node-c" + (d.data.cluster || "root");
+    })
+    .attr("transform", function(d) {
+      return "translate(" + d.y + "," + d.x + ")";
+    })
+    .style("cursor", function(d) {
+      return d.data.cluster ? "pointer" : "default";
+    });
 
-  node.append("circle")
+  nodes.on("click", function(d) {
+    if (!d.data.cluster) return;
+    activeCluster = activeCluster === d.data.cluster ? null : d.data.cluster;
+    refreshSelection();
+  });
+
+  nodes.on("mousemove", function(d) {
+    if (d.data.isLeaf) {
+      showTooltip(d3.event, d.data);
+      return;
+    }
+
+    if (d.data.cluster) {
+      var members = stateRows.filter(function(row) {
+        return row.cluster === d.data.cluster;
+      });
+
+      tooltipEl.style.display = "block";
+      tooltipEl.style.left = (d3.event.clientX + 14) + "px";
+      tooltipEl.style.top = (d3.event.clientY - 10) + "px";
+
+      document.getElementById("tt-title").textContent = clusterMeta[d.data.cluster].label;
+      document.getElementById("tt-gap").textContent = d3.mean(members, function(m) { return m.gap; }).toFixed(3);
+      document.getElementById("tt-cluster").textContent = members.length + " states";
+      document.getElementById("tt-infra").textContent = d3.mean(members, function(m) { return m.infra; }).toFixed(1);
+      document.getElementById("tt-policy").textContent = d3.mean(members, function(m) { return m.policy_norm; }).toFixed(4);
+      document.getElementById("tt-cat").textContent = "—";
+    }
+  });
+
+  nodes.on("mouseleave", function() {
+    tooltipEl.style.display = "none";
+  });
+
+  nodes.append("circle")
     .attr("r", function(d) {
       if (d.depth === 0) return 4;
       return d.data.isLeaf ? 4 : 7;
     })
-    .style("fill", function(d) {
+    .attr("fill", function(d) {
       if (d.depth === 0) return "#999999";
-      if (d.data.isLeaf) return catColor(d.data);
-      return CLUSTER_COLORS[d.data.cluster];
+      if (d.data.isLeaf) {
+        return d.data.category === "Underserved" ? "#4575b4" : "#d73027";
+      }
+      return clusterMeta[d.data.cluster].color;
     })
     .attr("stroke", function(d) {
       if (d.depth === 0) return "#999999";
-      return d.data.cluster ? CLUSTER_COLORS[d.data.cluster] : "#999999";
+      return d.data.cluster ? clusterMeta[d.data.cluster].color : "#999999";
     })
-    .style("stroke-width", 2);
+    .attr("stroke-width", 2);
 
-  node.append("text")
-    .attr("dy", "0.35em")
-    .attr("x", function(d) { return d.data.isLeaf ? 10 : -10; })
-    .attr("text-anchor", function(d) { return d.data.isLeaf ? "start" : "end"; })
-    .text(function(d) {
-      if (d.depth === 0) return "";
-      return d.data.name;
+  nodes.append("text")
+    .attr("dy", "0.31em")
+    .attr("x", function(d) {
+      return d.data.isLeaf ? 10 : -10;
     })
-    .style("font-size", function(d) { return d.data.isLeaf ? "9px" : "10px"; })
-    .style("font-weight", function(d) { return d.data.isLeaf ? "normal" : "bold"; })
+    .attr("text-anchor", function(d) {
+      return d.data.isLeaf ? "start" : "end";
+    })
+    .style("font-size", function(d) {
+      return d.data.isLeaf ? "9px" : "10px";
+    })
+    .style("font-weight", function(d) {
+      return d.data.isLeaf ? "normal" : "bold";
+    })
     .style("fill", function(d) {
       if (d.depth === 0) return "#666666";
-      return d.data.cluster ? CLUSTER_COLORS[d.data.cluster] : "#444444";
+      return d.data.cluster ? clusterMeta[d.data.cluster].color : "#444444";
+    })
+    .text(function(d) {
+      return d.depth === 0 ? "" : d.data.name;
     });
 }
 
-function drawMap(us) {
-  var wrap  = document.getElementById("panel-map").querySelector(".panel-body");
-  var width  = wrap.clientWidth;
-  var height = wrap.clientHeight - 32;
+function renderMap(us) {
+  var mapWrap = document.querySelector("#panel-map .panel-body");
+  var width = mapWrap.clientWidth;
+  var height = mapWrap.clientHeight - LEGEND_HEIGHT;
 
-  var svg = d3.select("#my_dataviz_map")
-    .attr("width",  width)
+  var svg = d3.select("#map-svg")
+    .attr("width", width)
     .attr("height", height);
+
   svg.selectAll("*").remove();
 
-  var projection = d3.geoAlbersUsa().scale(1).translate([0, 0]);
-  var path = d3.geoPath().projection(projection);
   var states = topojson.feature(us, us.objects.states);
 
-  var b = path.bounds(states);
-  var s = 0.92 / Math.max(
-    (b[1][0] - b[0][0]) / width,
-    (b[1][1] - b[0][1]) / height
-  );
-  var t = [
-    (width  - s * (b[1][0] + b[0][0])) / 2,
-    (height - s * (b[1][1] + b[0][1])) / 2
-  ];
-  projection.scale(s).translate(t);
+  var projection = d3.geoAlbersUsa()
+    .fitSize([width * MAP_FIT, height * MAP_FIT], states);
+
+  var translate = projection.translate();
+  projection.translate([
+    translate[0] + width * MAP_SHIFT_X,
+    translate[1] + height * MAP_SHIFT_Y
+  ]);
+
+  var path = d3.geoPath().projection(projection);
 
   svg.append("g")
-    .selectAll("path")
+    .selectAll(".state-shape")
     .data(states.features)
     .enter()
     .append("path")
-      .attr("class", "state-path")
-      .attr("d", path)
-      .attr("fill", function(d) {
-        var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-        var sd = byState[abbr];
-        return sd ? colorScale(sd.gap) : "#dddddd";
-      })
-      .attr("opacity", 0.85)
-      .on("mousemove", function(d) {
-        var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-        var sd = byState[abbr];
-        if (sd) showTT(d3.event, sd);
-      })
-      .on("mouseleave", hideTT)
-      .on("click", function(d) {
-        var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-        var sd = byState[abbr];
-        if (sd) toggleCluster(sd.cluster);
-      });
+    .attr("class", "state-shape")
+    .attr("d", path)
+    .attr("fill", function(d) {
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      var row = stateLookup[abbr];
+      return row ? gapColor(row.gap) : "#dddddd";
+    })
+    .attr("opacity", 0.85)
+    .on("mousemove", function(d) {
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      if (stateLookup[abbr]) showTooltip(d3.event, stateLookup[abbr]);
+    })
+    .on("mouseleave", function() {
+      tooltipEl.style.display = "none";
+    })
+    .on("click", function(d) {
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      if (!stateLookup[abbr]) return;
+
+      activeCluster = activeCluster === stateLookup[abbr].cluster
+        ? null
+        : stateLookup[abbr].cluster;
+
+      refreshSelection();
+    });
 
   svg.append("path")
-    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+    .datum(topojson.mesh(us, us.objects.states, function(a, b) {
+      return a !== b;
+    }))
     .attr("class", "state-border")
     .attr("d", path);
 
@@ -446,139 +553,150 @@ function drawMap(us) {
     .data(states.features)
     .enter()
     .append("text")
-      .attr("class", "state-label")
-      .attr("transform", function(d) {
-        var centroid = path.centroid(d);
-        return "translate(" + centroid + ")";
-      })
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "central")
-      .attr("font-size", "8px")
-      .attr("fill", "#ffffff")
-      .attr("font-weight", "bold")
-      .attr("pointer-events", "none")
-      .text(function(d) {
-        var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-        return abbr || "";
-      });
+    .attr("class", "state-label")
+    .attr("transform", function(d) {
+      var center = path.centroid(d);
+      return isNaN(center[0]) ? "translate(-999,-999)" : "translate(" + center + ")";
+    })
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "central")
+    .attr("font-size", "8px")
+    .attr("fill", "#ffffff")
+    .attr("font-weight", "bold")
+    .attr("pointer-events", "none")
+    .text(function(d) {
+      return fipsToState[String(d.id).padStart(2, "0")] || "";
+    });
 }
 
-function toggleCluster(c) {
-  selectedCluster = (selectedCluster === c) ? null : c;
-  updateHighlight();
+function showTooltip(evt, row) {
+  tooltipEl.style.display = "block";
+  tooltipEl.style.left = (evt.clientX + 14) + "px";
+  tooltipEl.style.top = (evt.clientY - 10) + "px";
+
+  document.getElementById("tt-title").textContent = row.State || row.name;
+  document.getElementById("tt-gap").textContent = (+row.gap).toFixed(4);
+  document.getElementById("tt-cluster").textContent = "C" + row.cluster + " — " + clusterMeta[row.cluster].label;
+  document.getElementById("tt-infra").textContent = (+row.infra).toFixed(1);
+  document.getElementById("tt-policy").textContent = (+row.policy_norm).toFixed(4);
+
+  var categoryText = row.category;
+  if (row.gap > NEVI_PRIORITY_THRESHOLD && row.category === "Underserved") {
+    categoryText += " ★ NEVI priority";
+  }
+  document.getElementById("tt-cat").textContent = categoryText;
 }
 
-function resetSelection() {
-  selectedCluster = null;
-  updateHighlight();
+function clearSelection() {
+  activeCluster = null;
+  refreshSelection();
 }
 
-function updateHighlight() {
-  var c = selectedCluster;
+function refreshSelection() {
+  var clusterId = activeCluster;
 
-  d3.selectAll(".state-path")
+  d3.selectAll(".state-shape")
     .classed("dimmed", function(d) {
-      if (c === null) return false;
-      var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-      var sd = byState[abbr];
-      return !sd || sd.cluster !== c;
+      if (clusterId === null) return false;
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      return !stateLookup[abbr] || stateLookup[abbr].cluster !== clusterId;
     })
     .classed("selected", function(d) {
-      if (c === null) return false;
-      var abbr = FIPS_STATE[String(d.id).padStart(2, "0")];
-      var sd = byState[abbr];
-      return sd && sd.cluster === c;
+      if (clusterId === null) return false;
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      return stateLookup[abbr] && stateLookup[abbr].cluster === clusterId;
     });
 
-  d3.selectAll(".dendro-g circle")
+  d3.selectAll(".tree-node circle, .tree-node text")
     .style("opacity", function() {
-      if (c === null) return 1;
-      var nodeClass = d3.select(this.parentNode).attr("class") || "";
-      var match = nodeClass.match(/dendro-g-c(\d+)/);
+      if (clusterId === null) return 1;
+      var className = d3.select(this.parentNode).attr("class") || "";
+      var match = className.match(/tree-node-c(\d+)/);
       if (!match) return 0.2;
-      return +match[1] === c ? 1 : 0.15;
+      return +match[1] === clusterId ? 1 : 0.15;
     });
 
-  d3.selectAll(".dendro-g text")
-    .style("opacity", function() {
-      if (c === null) return 1;
-      var nodeClass = d3.select(this.parentNode).attr("class") || "";
-      var match = nodeClass.match(/dendro-g-c(\d+)/);
-      if (!match) return 0.2;
-      return +match[1] === c ? 1 : 0.15;
-    });
-
-  d3.selectAll(".dendro-link")
+  d3.selectAll(".tree-link")
     .attr("stroke-opacity", function() {
-      if (c === null) return 0.5;
-      var linkClass = d3.select(this).attr("class") || "";
-      return linkClass.indexOf("dendro-link-c" + c) >= 0 ? 0.9 : 0.06;
+      if (clusterId === null) return 0.5;
+      var className = d3.select(this).attr("class") || "";
+      return className.indexOf("tree-link-c" + clusterId) >= 0 ? 0.9 : 0.06;
     });
 
-  updateStats(c);
-}
+  var selectedRows = stateRows.filter(function(row) {
+    return clusterId === null || row.cluster === clusterId;
+  });
 
-function updateStats(c) {
-  var subset = c === null
-    ? DATA
-    : DATA.filter(function(d) { return d.cluster === c; });
-  var n = subset.length;
+  document.getElementById("stat-count").textContent = selectedRows.length;
 
-  document.getElementById("s-count").textContent  = n;
-  document.getElementById("s-gap").textContent    = n ? d3.mean(subset, function(d) { return d.gap; }).toFixed(3) : "—";
-  document.getElementById("s-infra").textContent  = n ? d3.mean(subset, function(d) { return d.infra; }).toFixed(1) : "—";
-  document.getElementById("s-policy").textContent = n ? d3.mean(subset, function(d) { return d.policy_norm; }).toFixed(4) : "—";
-  document.getElementById("s-name").textContent   = c === null
+  if (selectedRows.length > 0) {
+    var avgGap = d3.mean(selectedRows, function(row) { return row.gap; });
+    var avgInfra = d3.mean(selectedRows, function(row) { return row.infra; });
+    var avgPolicy = d3.mean(selectedRows, function(row) { return row.policy_norm; });
+
+    document.getElementById("stat-gap").textContent = avgGap.toFixed(3);
+    document.getElementById("stat-infra").textContent = avgInfra.toFixed(1);
+    document.getElementById("stat-policy").textContent = avgPolicy.toFixed(4);
+  } else {
+    document.getElementById("stat-gap").textContent = "—";
+    document.getElementById("stat-infra").textContent = "—";
+    document.getElementById("stat-policy").textContent = "—";
+  }
+
+  document.getElementById("stat-name").textContent = clusterId === null
     ? "All clusters"
-    : "C" + c + ": " + CLUSTER_NAMES[c];
+    : "C" + clusterId + ": " + clusterMeta[clusterId].label;
 }
-
-function showTT(e, d) {
-  tt.style.display = "block";
-  tt.style.left = (e.clientX + 14) + "px";
-  tt.style.top  = (e.clientY - 10) + "px";
-  document.getElementById("tt-title").textContent   = d.State || d.name;
-  document.getElementById("tt-gap").textContent     = (+d.gap).toFixed(4);
-  document.getElementById("tt-cluster").textContent = "C" + d.cluster + " — " + CLUSTER_NAMES[d.cluster];
-  document.getElementById("tt-infra").textContent   = (+d.infra).toFixed(1);
-  document.getElementById("tt-policy").textContent  = (+d.policy_norm).toFixed(4);
-  document.getElementById("tt-cat").textContent     = d.category;
-}
-
-function hideTT() { tt.style.display = "none"; }
 
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
   d3.csv("data/gap_only_clustered.csv")
 ]).then(function(results) {
-  var us  = results[0];
+  var us = results[0];
   var csv = results[1];
 
-  DATA = csv.map(function(d) {
-    return {
-      State:       d.State,
-      gap:         +d.gap_score,
-      cluster:     +d.Gap_Cluster,
-      infra:       +d.chargers_per_100k,
-      policy_norm: +d.policy_norm,
-      category:    d.category
+  if (csv.length !== 51) {
+    console.warn("Expected 51 rows, got " + csv.length);
+  }
+
+  stateRows = [];
+  stateLookup = {};
+
+  csv.forEach(function(row) {
+    var gap = parseFloat(row.gap_score);
+    var cluster = parseInt(row.Gap_Cluster, 10);
+
+    if (isNaN(gap)) {
+      console.warn("Skipping row with invalid gap_score for", row.State);
+      return;
+    }
+
+    var record = {
+      State: row.State,
+      gap: gap,
+      cluster: cluster,
+      infra: parseFloat(row.chargers_per_100k),
+      policy_norm: parseFloat(row.policy_norm),
+      category: row.category
     };
+
+    stateRows.push(record);
+    stateLookup[row.State] = record;
   });
 
-  DATA.forEach(function(d) { byState[d.State] = d; });
-
-  drawDendro(DATA);
-  drawMap(us);
-  updateStats(null);
-
-}).catch(function(err) {
-  console.error(err);
-  alert("Could not load data. Make sure gap_only_clustered.csv is in the data/ folder.");
+  renderDendrogram(stateRows);
+  renderMap(us);
+  refreshSelection();
+}).catch(function(error) {
+  console.error("Data load failed:", error);
+  alert("Could not load data. Make sure gap_only_clustered.csv is in the data folder.");
 });
 
 window.addEventListener("resize", function() {
-  if (DATA.length) drawDendro(DATA);
+  if (!stateRows.length) return;
+  renderDendrogram(stateRows);
 });
 </script>
+
 </body>
 </html>
