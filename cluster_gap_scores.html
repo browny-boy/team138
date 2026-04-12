@@ -9,7 +9,7 @@
      Observable tidy tree: https://observablehq.com/@d3/tree/2
      Observable US choropleth: https://observablehq.com/@d3/us-state-choropleth/2
      Murray, Scott. Interactive Data Visualization for the Web, 2nd Ed. O'Reilly 2017
-       ch 5 (csv parsing), ch 6 (bindig data), ch 12 (selections), ch 14 (geomapping)
+       ch 5 (csv parsing), ch 6 (data bindng), ch 12 (selections), ch 14 (geomapping)
 -->
 
 <script src="./lib/d3.v5.min.js"></script>
@@ -384,12 +384,14 @@ function drawMap(us) {
 
   var statesGeo = topojson.feature(us, us.objects.states);
 
-  // fitSize from https://observablehq.com/@d3/us-state-choropleth/2
-  var proj = d3.geoAlbersUsa().fitSize([width*0.93, height*0.93], statesGeo);
-  var tr = proj.translate();
-  proj.translate([tr[0] + width*0.035, tr[1] + height*0.035]);
-
+  // manual bounds -> scale -> translate (Murray ch 14)
+  // fitSize would be cleaner but our d3 build doesn't have it
+  var proj = d3.geoAlbersUsa().scale(1).translate([0,0]);
   var path = d3.geoPath().projection(proj);
+  var b = path.bounds(statesGeo);
+  var s = 0.92 / Math.max((b[1][0]-b[0][0])/width, (b[1][1]-b[0][1])/height);
+  var t = [(width - s*(b[1][0]+b[0][0]))/2, (height - s*(b[1][1]+b[0][1]))/2];
+  proj.scale(s).translate(t);
 
   svg.append("g").selectAll("path")
     .data(statesGeo.features)
@@ -493,14 +495,12 @@ Promise.all([
 ]).then(function(res) {
   var us = res[0], csv = res[1];
 
-  if (csv.length !== 51) console.warn("expected 51 rows got " + csv.length);
 
   for (var i = 0; i < csv.length; i++) {
     var r = csv[i];
     var g = parseFloat(r.gap_score);
-    if (isNaN(g)) { console.warn("bad gap_score for "+r.State); continue; }
+    if (isNaN(g)) continue;
     var cl = parseInt(r.Gap_Cluster);
-    if (cl < 1 || cl > 4) console.warn("cluster "+cl+" out of range for "+r.State);
 
     var obj = {
       State: r.State, gap: g, cluster: cl,
@@ -511,15 +511,12 @@ Promise.all([
     DATA.push(obj);
     byState[r.State] = obj;
   }
-  //console.log(DATA.length + " states loaded");
-  //console.log("gap range:", d3.extent(DATA, function(d){return d.gap}));
 
   drawDendro(DATA);
   drawMap(us);
   doHighlight();
 
 }).catch(function(e) {
-  console.error("load failed:", e);
   alert("Could not load data — check that gap_only_clustered.csv is in the data/ folder.");
 });
 
