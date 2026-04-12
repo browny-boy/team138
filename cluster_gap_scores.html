@@ -499,12 +499,11 @@ Promise.all([
   doHighlight();
 
 }).catch(function(e) {
-  alert("Could not load data — check that gap_only_clustered.csv is in the data/ folder.");
+  alert("Data load error");
 });
 
 window.addEventListener("resize", function() {
   if (DATA.length) drawDendro(DATA);
-  //if (_usTopoCache) drawMap(_usTopoCache); // this works but makes resize laggy
 });
 </script>
 </body>
