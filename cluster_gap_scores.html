@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EV Gap Score Clustering Dashboard - Team 138</title>
 
-<script type="text/javascript" src="./lib/d3.v5.min.js"></script>
-<script type="text/javascript" src="./lib/topojson.v2.min.js"></script>
+<!-- References:
+     Observable tidy tree: https://observablehq.com/@d3/tree/2
+     Observable US choropleth: https://observablehq.com/@d3/us-state-choropleth/2
+     Murray, Scott. Interactive Data Visualization for the Web, 2nd Ed. O'Reilly 2017
+       ch 5 (csv parsing), ch 6 (bindig data), ch 12 (selections), ch 14 (geomapping)
+-->
+
+<script src="./lib/d3.v5.min.js"></script>
+<script src="./lib/topojson.v2.min.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: #ffffff;
@@ -35,17 +38,8 @@ header {
   background: #f5f5f5;
   flex-shrink: 0;
 }
-
-header h1 {
-  font-size: 14px;
-  font-weight: bold;
-}
-
-header p {
-  font-size: 11px;
-  color: #666666;
-  margin-top: 2px;
-}
+header h1 { font-size: 14px; font-weight: bold; }
+header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 
 #main {
   flex: 1;
@@ -74,16 +68,13 @@ header p {
 
 .panel-body {
   position: absolute;
-  top: 28px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 28px; left: 0; right: 0; bottom: 0;
   overflow: hidden;
 }
 
-#panel-tree  { grid-row: 1; grid-column: 1; }
-#panel-map   { grid-row: 1; grid-column: 2; }
-#panel-stats { grid-row: 2; grid-column: 1 / 3; }
+#panel-dendro { grid-row: 1; grid-column: 1; }
+#panel-map    { grid-row: 1; grid-column: 2; }
+#panel-stats  { grid-row: 2; grid-column: 1 / 3; }
 
 #panel-stats .panel-body {
   top: 28px;
@@ -93,26 +84,10 @@ header p {
   gap: 40px;
 }
 
-.stat-block {
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 10px;
-  color: #888888;
-  margin-bottom: 2px;
-}
-
-.stat-value {
-  font-size: 18px;
-  font-weight: bold;
-  color: #222222;
-}
-
-.stat-sub {
-  font-size: 10px;
-  color: #aaaaaa;
-}
+.stat-block { text-align: center; }
+.stat-label { font-size: 10px; color: #888888; margin-bottom: 2px; }
+.stat-value { font-size: 18px; font-weight: bold; color: #222222; }
+.stat-sub   { font-size: 10px; color: #aaaaaa; }
 
 #legend {
   display: flex;
@@ -122,12 +97,14 @@ header p {
   border-top: 1px solid #eeeeee;
   background: #f9f9f9;
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   height: 32px;
 }
-
+.leg-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: #555555;
+}
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
 #reset-btn {
   margin-left: auto;
   font-size: 11px;
@@ -138,48 +115,34 @@ header p {
   cursor: pointer;
   color: #444444;
 }
+#reset-btn:hover { background: #eeeeee; }
 
-#reset-btn:hover {
-  background: #eeeeee;
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: #ffffff;
+  border: 1px solid #aaaaaa;
+  padding: 8px 10px;
+  font-size: 11px;
+  max-width: 210px;
+  display: none;
+  z-index: 1000;
+  line-height: 1.6;
 }
+#tooltip .tt-title { font-weight: bold; margin-bottom: 3px; font-size: 12px; }
+#tooltip .tt-row   { display: flex; justify-content: space-between; gap: 8px; color: #555555; }
+#tooltip .tt-row span:last-child { color: #222222; font-weight: bold; }
 
-.state-shape {
+.state-path {
   stroke: #ffffff;
   stroke-width: 0.5px;
   cursor: pointer;
   transition: opacity 0.2s;
 }
-
-.state-shape:hover {
-  stroke: #333333;
-  stroke-width: 1.5px;
-}
-
-.state-shape.dimmed {
-  opacity: 0.1;
-}
-
-.state-shape.selected {
-  stroke: #333333;
-  stroke-width: 2px;
-}
-
-.state-border {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 0.8px;
-  pointer-events: none;
-}
-
-.tree-link {
-  fill: none;
-}
-
-.tree-node text {
-  stroke: white;
-  stroke-width: 3px;
-  paint-order: stroke;
-}
+.state-path:hover   { stroke: #333333; stroke-width: 1.5px; }
+.state-path.dimmed  { opacity: 0.1; }
+.state-path.selected { stroke: #333333; stroke-width: 2px; }
+.state-border { fill: none; stroke: #ffffff; stroke-width: 0.8px; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -187,28 +150,28 @@ header p {
 <header>
   <div>
     <h1>EV Infrastructure Gap Score — Hierarchical Clustering Dashboard · Team 138</h1>
-    <p>Tidy tree + choropleth · Click any branch or state to highlight a cluster</p>
+    <p>Ward linkage · Feature: gap score · Click any node, branch or state to highlight cluster</p>
   </div>
 </header>
 
 <div id="main">
 
-  <div class="panel" id="panel-tree">
-    <div class="panel-title">Tidy tree — cluster membership by state</div>
+  <div class="panel" id="panel-dendro">
+    <div class="panel-title">Dendrogram — Ward linkage on gap score</div>
     <div class="panel-body">
-      <div id="tree-wrap" style="width:100%;height:100%;"></div>
+      <div id="my_dataviz_dendro" style="width:100%;height:100%;"></div>
     </div>
   </div>
 
   <div class="panel" id="panel-map">
     <div class="panel-title">Choropleth — gap score by state (blue = underserved · red = over-built)</div>
     <div class="panel-body">
-      <svg id="map-svg"></svg>
+      <svg id="my_dataviz_map"></svg>
       <div id="legend">
         <span style="font-size:10px;color:#d73027;font-weight:bold;">Over-built</span>
         <div style="flex:1;height:12px;border-radius:3px;background:linear-gradient(to right,#d73027,#f7f7f7,#2166ac);max-width:260px;align-self:center;"></div>
         <span style="font-size:10px;color:#2166ac;font-weight:bold;">Underserved</span>
-        <button id="reset-btn" onclick="clearSelection()">Reset</button>
+        <button id="reset-btn" onclick="resetSelection()">Reset</button>
       </div>
     </div>
   </div>
@@ -218,31 +181,27 @@ header p {
     <div class="panel-body">
       <div class="stat-block">
         <div class="stat-label">States selected</div>
-        <div class="stat-value" id="stat-count">51</div>
+        <div class="stat-value" id="s-count">51</div>
         <div class="stat-sub">all states</div>
       </div>
-
       <div class="stat-block">
         <div class="stat-label">Avg gap score</div>
-        <div class="stat-value" id="stat-gap">—</div>
+        <div class="stat-value" id="s-gap">—</div>
         <div class="stat-sub">policy − infra</div>
       </div>
-
       <div class="stat-block">
         <div class="stat-label">Avg chargers / 100k</div>
-        <div class="stat-value" id="stat-infra">—</div>
+        <div class="stat-value" id="s-infra">—</div>
         <div class="stat-sub">infrastructure</div>
       </div>
-
       <div class="stat-block">
         <div class="stat-label">Avg policy norm</div>
-        <div class="stat-value" id="stat-policy">—</div>
+        <div class="stat-value" id="s-policy">—</div>
         <div class="stat-sub">recency-weighted</div>
       </div>
-
       <div class="stat-block">
         <div class="stat-label">Cluster</div>
-        <div class="stat-value" id="stat-name" style="font-size:12px;color:#555;">All clusters</div>
+        <div class="stat-value" id="s-name" style="font-size:12px;color:#555;">All clusters</div>
         <div class="stat-sub">&nbsp;</div>
       </div>
     </div>
@@ -250,368 +209,325 @@ header p {
 
 </div>
 
+<div id="tooltip">
+  <div class="tt-title" id="tt-title"></div>
+  <div class="tt-row"><span>Gap score</span><span id="tt-gap"></span></div>
+  <div class="tt-row"><span>Cluster</span><span id="tt-cluster"></span></div>
+  <div class="tt-row"><span>Per 100k</span><span id="tt-infra"></span></div>
+  <div class="tt-row"><span>Policy norm</span><span id="tt-policy"></span></div>
+  <div class="tt-row"><span>Category</span><span id="tt-cat"></span></div>
+</div>
+
 <script>
-var LEGEND_HEIGHT = 32;
-var MAP_PADDING = 20;
 
-var clusterMeta = {
-  1: { label: "Over-built (high infra)", color: "#d73027" },
-  2: { label: "High gap — most underserved", color: "#4575b4" },
-  3: { label: "Moderately over-built", color: "#f46d43" },
-  4: { label: "Low-moderate gap", color: "#74add1" }
+// k=4 ward linkage from clustering_analysis.ipynb
+var clusterNames = {
+  1: "Over-built (high infra)",
+  2: "High gap — most underserved",
+  3: "Moderately over-built",
+  4: "Low-moderate gap"
 };
+var clusterColors = { 1: "#d73027", 2: "#4575b4", 3: "#f46d43", 4: "#74add1" };
 
-var stateToFips = {
-  "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09",
-  "DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17",
-  "IN":"18","IA":"19","KS":"20","KY":"21","LA":"22","ME":"23","MD":"24",
-  "MA":"25","MI":"26","MN":"27","MS":"28","MO":"29","MT":"30","NE":"31",
-  "NV":"32","NH":"33","NJ":"34","NM":"35","NY":"36","NC":"37","ND":"38",
-  "OH":"39","OK":"40","OR":"41","PA":"42","RI":"44","SC":"45","SD":"46",
-  "TN":"47","TX":"48","UT":"49","VT":"50","VA":"51","WA":"53","WV":"54",
-  "WI":"55","WY":"56"
-};
+// fips lookup - topojson uses numeric ids, our csv uses abbreviations
+var FIPS = {"AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09","DE":"10","DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17","IN":"18","IA":"19","KS":"20","KY":"21","LA":"22","ME":"23","MD":"24","MA":"25","MI":"26","MN":"27","MS":"28","MO":"29","MT":"30","NE":"31","NV":"32","NH":"33","NJ":"34","NM":"35","NY":"36","NC":"37","ND":"38","OH":"39","OK":"40","OR":"41","PA":"42","RI":"44","SC":"45","SD":"46","TN":"47","TX":"48","UT":"49","VT":"50","VA":"51","WA":"53","WV":"54","WI":"55","WY":"56"};
+var FIPS_STATE = {};
+for (var ab in FIPS) FIPS_STATE[FIPS[ab]] = ab;
 
-var fipsToState = {};
-Object.keys(stateToFips).forEach(function(abbr) {
-  fipsToState[stateToFips[abbr]] = abbr;
-});
+var DATA = [];
+var byState = {};
+var selectedCluster = null;
+var tt = document.getElementById("tooltip");
 
-var stateRows = [];
-var stateLookup = {};
-var activeCluster = null;
-var usMapData = null;
+// gap range is asymmetric (-1.2 to +0.8) so diverging works better than sequential
+var colorScale = d3.scaleDiverging(d3.interpolateRdBu).domain([-1.2, 0, 0.8]);
 
-var gapColor = d3.scaleDiverging(d3.interpolateRdBu)
-  .domain([-1.2, 0, 0.8]);
 
-function buildTreeData(rows) {
-  var clusterOrder = [2, 4, 3, 1];
-  var root = { name: "root", children: [] };
+// --- dendro ---
+// based on https://observablehq.com/@d3/tree/2
 
-  clusterOrder.forEach(function(clusterId) {
-    var members = rows
-      .filter(function(row) { return row.cluster === clusterId; })
-      .sort(function(a, b) { return b.gap - a.gap; });
+function drawDendro(data) {
+  d3.select("#my_dataviz_dendro").selectAll("svg").remove();
 
-    root.children.push({
-      name: "C" + clusterId,
-      cluster: clusterId,
-      children: members.map(function(row) {
-        return {
-          name: row.State,
-          State: row.State,
-          cluster: row.cluster,
-          gap: row.gap,
-          infra: row.infra,
-          policy_norm: row.policy_norm,
-          category: row.category,
-          isLeaf: true
-        };
-      })
-    });
-  });
+  var container = document.getElementById("my_dataviz_dendro");
+  var w = container.clientWidth, h = container.clientHeight;
+  if (w < 10) return;
 
-  return root;
-}
+  var svg = d3.select("#my_dataviz_dendro").append("svg")
+    .attr("width", w).attr("height", h)
+    .append("g").attr("transform", "translate(40,0)");
 
-function titleText(d) {
-  return [
-    (d.State || d.name),
-    "Gap score: " + (+d.gap).toFixed(4),
-    "Cluster: C" + d.cluster + " — " + clusterMeta[d.cluster].label,
-    "Chargers / 100k: " + (+d.infra).toFixed(1),
-    "Policy norm: " + (+d.policy_norm).toFixed(4),
-    "Category: " + d.category
-  ].join("\n");
-}
+  // build tree: root -> cluster groups -> state leaves
+  var ordering = [2, 4, 3, 1]; // underserved first
+  var treeData = {name: "root", children: []};
+  for (var i = 0; i < ordering.length; i++) {
+    var cid = ordering[i];
+    var members = [];
+    for (var j = 0; j < data.length; j++) {
+      if (data[j].cluster === cid) members.push(data[j]);
+    }
+    members.sort(function(a,b) { return b.gap - a.gap; });
+    var leaves = [];
+    for (var k = 0; k < members.length; k++) {
+      leaves.push({ name: members[k].State, cluster: cid, gap: members[k].gap,
+                     infra: members[k].infra, policy: members[k].policy_norm,
+                     category: members[k].category, isLeaf: true });
+    }
+    treeData.children.push({name: "C"+cid, cluster: cid, children: leaves});
+  }
 
-function clusterTitleText(clusterId) {
-  var members = stateRows.filter(function(row) {
-    return row.cluster === clusterId;
-  });
+  // cluster layout spaces leaves evenly (Murray ch 13)
+  var layout = d3.cluster().size([h, w - 160]);
+  var root = d3.hierarchy(treeData);
+  layout(root);
 
-  return [
-    clusterMeta[clusterId].label,
-    "States: " + members.length,
-    "Avg gap score: " + d3.mean(members, function(d) { return d.gap; }).toFixed(3),
-    "Avg chargers / 100k: " + d3.mean(members, function(d) { return d.infra; }).toFixed(1),
-    "Avg policy norm: " + d3.mean(members, function(d) { return d.policy_norm; }).toFixed(4)
-  ].join("\n");
-}
-
-function renderTree(rows) {
-  d3.select("#tree-wrap").selectAll("svg").remove();
-
-  var container = document.getElementById("tree-wrap");
-  var width = container.clientWidth;
-  var height = container.clientHeight;
-
-  if (width < 10 || height < 10) return;
-
-  var svg = d3.select("#tree-wrap")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-  var g = svg.append("g")
-    .attr("transform", "translate(40,20)");
-
-  // Source: https://observablehq.com/@d3/tree/2
-  var root = d3.hierarchy(buildTreeData(rows));
-
-  // Source: https://observablehq.com/@d3/tree/2
-  var tree = d3.tree().size([height - 40, width - 180]);
-
-  tree(root);
-
-  g.selectAll(".tree-link")
-    // Source: https://observablehq.com/@d3/tree/2
+  // root.links() + linkHorizontal from https://observablehq.com/@d3/tree/2
+  svg.selectAll("path.lnk")
     .data(root.links())
-    .enter()
-    .append("path")
-    .attr("class", function(link) {
-      var node = link.target;
-      while (!node.data.cluster && node.children) node = node.children[0];
-      return "tree-link tree-link-c" + (node.data.cluster || 0);
+    .enter().append("path")
+    .attr("class", function(d) {
+      var n = d.target;
+      while (!n.data.cluster && n.children) n = n.children[0];
+      return "lnk lnk-c" + (n.data.cluster || 0);
     })
-    // Source: https://observablehq.com/@d3/tree/2
-    .attr("d", d3.linkHorizontal()
-      .x(function(d) { return d.y; })
-      .y(function(d) { return d.x; }))
-    .attr("stroke", function(link) {
-      var node = link.target;
-      while (!node.data.cluster && node.children) node = node.children[0];
-      return node.data.cluster ? clusterMeta[node.data.cluster].color : "#cccccc";
+    .attr("d", d3.linkHorizontal().x(function(d){return d.y}).y(function(d){return d.x}))
+    .attr("fill","none")
+    .attr("stroke", function(d) {
+      var n = d.target;
+      while (!n.data.cluster && n.children) n = n.children[0];
+      return n.data.cluster ? clusterColors[n.data.cluster] : "#ccc";
     })
     .attr("stroke-opacity", 0.5);
 
-  var node = g.selectAll(".tree-node")
+  var gNode = svg.selectAll("g.nd")
     .data(root.descendants())
-    .enter()
-    .append("g")
-    .attr("class", function(d) {
-      return "tree-node tree-node-c" + (d.data.cluster || "root");
-    })
-    // Source: https://observablehq.com/@d3/tree/2
-    .attr("transform", function(d) {
-      return "translate(" + d.y + "," + d.x + ")";
-    })
-    .style("cursor", function(d) {
-      return d.data.cluster ? "pointer" : "default";
-    })
-    .on("click", function(d) {
-      if (!d.data.cluster) return;
-      activeCluster = activeCluster === d.data.cluster ? null : d.data.cluster;
-      refreshSelection();
-    });
+    .enter().append("g")
+    .attr("class", function(d) { return "nd nd-c" + (d.data.cluster||"root"); })
+    .attr("transform", function(d) { return "translate("+d.y+","+d.x+")"; })
+    .style("cursor", function(d) { return d.data.cluster ? "pointer" : "default"; });
 
-  node.append("circle")
-    .attr("r", function(d) {
-      if (d.depth === 0) return 4;
-      return d.data.isLeaf ? 4 : 7;
-    })
-    .attr("fill", function(d) {
-      if (d.depth === 0) return "#999999";
-      if (d.data.isLeaf) {
-        return d.data.category === "Underserved" ? "#4575b4" : "#d73027";
-      }
-      return clusterMeta[d.data.cluster].color;
-    })
-    .attr("stroke", function(d) {
-      if (d.depth === 0) return "#999999";
-      return d.data.cluster ? clusterMeta[d.data.cluster].color : "#999999";
-    })
-    .attr("stroke-width", 2);
-
-  node.append("text")
-    .attr("dy", "0.31em")
-    .attr("x", function(d) { return d.children ? -10 : 10; })
-    .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
-    .style("font-size", function(d) { return d.children ? "10px" : "9px"; })
-    .style("font-weight", function(d) { return d.children ? "bold" : "normal"; })
-    .style("fill", function(d) {
-      if (d.depth === 0) return "#666666";
-      return d.data.cluster ? clusterMeta[d.data.cluster].color : "#444444";
-    })
-    .text(function(d) {
-      return d.depth === 0 ? "" : d.data.name;
-    });
-
-  node.append("title")
-    .text(function(d) {
-      if (d.data.isLeaf) return titleText(d.data);
-      if (d.data.cluster) return clusterTitleText(d.data.cluster);
-      return "";
-    });
-}
-
-function renderMap(us) {
-  var mapWrap = document.querySelector("#panel-map .panel-body");
-  var width = mapWrap.clientWidth;
-  var height = mapWrap.clientHeight - LEGEND_HEIGHT;
-
-  var svg = d3.select("#map-svg")
-    .attr("width", width)
-    .attr("height", height);
-
-  svg.selectAll("*").remove();
-
-  var states = topojson.feature(us, us.objects.states);
-
-  // Staying close to the Observable choropleth pattern: use geoPath().fitSize(...)
-  var path = d3.geoPath().fitSize([width - MAP_PADDING, height - MAP_PADDING], states);
-
-  svg.append("g")
-    .selectAll(".state-shape")
-    .data(states.features)
-    .enter()
-    .append("path")
-    .attr("class", "state-shape")
-    .attr("d", path)
-    .attr("transform", "translate(10,10)")
-    .attr("fill", function(d) {
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      var row = stateLookup[abbr];
-      return row ? gapColor(row.gap) : "#dddddd";
-    })
-    .attr("opacity", 0.85)
-    .on("click", function(d) {
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      if (!stateLookup[abbr]) return;
-      activeCluster = activeCluster === stateLookup[abbr].cluster ? null : stateLookup[abbr].cluster;
-      refreshSelection();
-    })
-    .append("title")
-    .text(function(d) {
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      var row = stateLookup[abbr];
-      return row ? titleText(row) : "";
-    });
-
-  svg.append("path")
-    // Source: https://observablehq.com/@d3/us-state-choropleth/2
-    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
-    .attr("class", "state-border")
-    .attr("transform", "translate(10,10)")
-    .attr("d", path);
-
-  svg.append("g")
-    .selectAll(".state-label")
-    .data(states.features)
-    .enter()
-    .append("text")
-    .attr("class", "state-label")
-    .attr("transform", function(d) {
-      var c = path.centroid(d);
-      return isNaN(c[0]) ? "translate(-999,-999)" : "translate(" + (c[0] + 10) + "," + (c[1] + 10) + ")";
-    })
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "central")
-    .attr("font-size", "8px")
-    .attr("fill", "#ffffff")
-    .attr("font-weight", "bold")
-    .attr("pointer-events", "none")
-    .text(function(d) {
-      return fipsToState[String(d.id).padStart(2, "0")] || "";
-    });
-}
-
-function clearSelection() {
-  activeCluster = null;
-  refreshSelection();
-}
-
-function refreshSelection() {
-  var clusterId = activeCluster;
-
-  d3.selectAll(".state-shape")
-    .classed("dimmed", function(d) {
-      if (clusterId === null) return false;
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      return !stateLookup[abbr] || stateLookup[abbr].cluster !== clusterId;
-    })
-    .classed("selected", function(d) {
-      if (clusterId === null) return false;
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      return stateLookup[abbr] && stateLookup[abbr].cluster === clusterId;
-    });
-
-  d3.selectAll(".tree-node circle, .tree-node text")
-    .style("opacity", function() {
-      if (clusterId === null) return 1;
-      var className = d3.select(this.parentNode).attr("class") || "";
-      var match = className.match(/tree-node-c(\d+)/);
-      if (!match) return 0.2;
-      return (+match[1] === clusterId) ? 1 : 0.15;
-    });
-
-  d3.selectAll(".tree-link")
-    .attr("stroke-opacity", function() {
-      if (clusterId === null) return 0.5;
-      var className = d3.select(this).attr("class") || "";
-      return className.indexOf("tree-link-c" + clusterId) >= 0 ? 0.9 : 0.06;
-    });
-
-  var selectedRows = stateRows.filter(function(row) {
-    return clusterId === null || row.cluster === clusterId;
+  gNode.on("click", function(d) {
+    if (!d.data.cluster) return;
+    selectedCluster = selectedCluster === d.data.cluster ? null : d.data.cluster;
+    doHighlight();
   });
 
-  document.getElementById("stat-count").textContent = selectedRows.length;
+  gNode.on("mousemove", function(d) {
+    if (d.data.isLeaf) {
+      tt.style.display = "block";
+      tt.style.left = (d3.event.clientX+14)+"px";
+      tt.style.top = (d3.event.clientY-10)+"px";
+      document.getElementById("tt-title").textContent = d.data.name;
+      document.getElementById("tt-gap").textContent = d.data.gap.toFixed(4);
+      document.getElementById("tt-cluster").textContent = "C"+d.data.cluster+" — "+clusterNames[d.data.cluster];
+      document.getElementById("tt-infra").textContent = d.data.infra.toFixed(1);
+      document.getElementById("tt-policy").textContent = d.data.policy.toFixed(4);
+      document.getElementById("tt-cat").textContent = d.data.category;
+    } else if (d.data.cluster) {
+      var ms = [], sg=0, si=0, sp=0;
+      for (var x=0; x<DATA.length; x++) {
+        if (DATA[x].cluster === d.data.cluster) {
+          ms.push(DATA[x]); sg+=DATA[x].gap; si+=DATA[x].infra; sp+=DATA[x].policy_norm;
+        }
+      }
+      tt.style.display = "block";
+      tt.style.left = (d3.event.clientX+14)+"px"; tt.style.top = (d3.event.clientY-10)+"px";
+      document.getElementById("tt-title").textContent = clusterNames[d.data.cluster];
+      document.getElementById("tt-gap").textContent = (sg/ms.length).toFixed(3);
+      document.getElementById("tt-cluster").textContent = ms.length+" states";
+      document.getElementById("tt-infra").textContent = (si/ms.length).toFixed(1);
+      document.getElementById("tt-policy").textContent = (sp/ms.length).toFixed(4);
+      document.getElementById("tt-cat").textContent = "—";
+    }
+  }).on("mouseleave", function(){ tt.style.display="none"; });
 
-  if (selectedRows.length) {
-    document.getElementById("stat-gap").textContent =
-      d3.mean(selectedRows, function(d) { return d.gap; }).toFixed(3);
-    document.getElementById("stat-infra").textContent =
-      d3.mean(selectedRows, function(d) { return d.infra; }).toFixed(1);
-    document.getElementById("stat-policy").textContent =
-      d3.mean(selectedRows, function(d) { return d.policy_norm; }).toFixed(4);
-  } else {
-    document.getElementById("stat-gap").textContent = "—";
-    document.getElementById("stat-infra").textContent = "—";
-    document.getElementById("stat-policy").textContent = "—";
-  }
+  gNode.append("circle")
+    .attr("r", function(d) { return d.depth===0 ? 4 : (d.data.isLeaf ? 4 : 7); })
+    .style("fill", function(d) {
+      if (d.depth===0) return "#999";
+      if (d.data.isLeaf) return d.data.category==="Underserved" ? "#4575b4" : "#d73027";
+      return clusterColors[d.data.cluster];
+    })
+    .attr("stroke", function(d) {
+      return d.depth===0 ? "#999" : (d.data.cluster ? clusterColors[d.data.cluster] : "#999");
+    })
+    .style("stroke-width", 2);
 
-  document.getElementById("stat-name").textContent = clusterId === null
-    ? "All clusters"
-    : "C" + clusterId + ": " + clusterMeta[clusterId].label;
+  gNode.append("text")
+    .attr("dy","0.31em")
+    .attr("x", function(d){ return d.data.isLeaf ? 10 : -10; })
+    .attr("text-anchor", function(d){ return d.data.isLeaf ? "start" : "end"; })
+    .text(function(d){ return d.depth===0 ? "" : d.data.name; })
+    .style("font-size", function(d){ return d.data.isLeaf ? "9px" : "10px"; })
+    .style("font-weight", function(d){ return d.data.isLeaf ? "normal" : "bold"; })
+    .style("fill", function(d){
+      return d.depth===0 ? "#666" : (d.data.cluster ? clusterColors[d.data.cluster] : "#444");
+    })
+    // paint-order halo: https://observablehq.com/@d3/tree/2
+    .attr("stroke","white").attr("stroke-width",3).attr("paint-order","stroke");
 }
+
+
+// --- map ---
+// based on Murray ch 14 + https://observablehq.com/@d3/us-state-choropleth/2
+
+var _usTopoCache = null;
+
+function drawMap(us) {
+  _usTopoCache = us;
+  var wrap = document.getElementById("panel-map").querySelector(".panel-body");
+  var width = wrap.clientWidth;
+  var height = wrap.clientHeight - 32; // legend takes 32px
+
+  var svg = d3.select("#my_dataviz_map").attr("width",width).attr("height",height);
+  svg.selectAll("*").remove();
+
+  var statesGeo = topojson.feature(us, us.objects.states);
+
+  // fitSize from https://observablehq.com/@d3/us-state-choropleth/2
+  var proj = d3.geoAlbersUsa().fitSize([width*0.93, height*0.93], statesGeo);
+  var tr = proj.translate();
+  proj.translate([tr[0] + width*0.035, tr[1] + height*0.035]);
+
+  var path = d3.geoPath().projection(proj);
+
+  svg.append("g").selectAll("path")
+    .data(statesGeo.features)
+    .enter().append("path")
+    .attr("class","state-path")
+    .attr("d", path)
+    .attr("fill", function(d) {
+      var st = FIPS_STATE[String(d.id).padStart(2,"0")];
+      if (!st || !byState[st]) return "#ddd";
+      return colorScale(byState[st].gap);
+    })
+    .attr("opacity", 0.85)
+    .on("mousemove", function(d) {
+      var st = FIPS_STATE[String(d.id).padStart(2,"0")];
+      var rec = byState[st];
+      if (!rec) return;
+      tt.style.display = "block";
+      tt.style.left = (d3.event.clientX+14)+"px";
+      tt.style.top = (d3.event.clientY-10)+"px";
+      document.getElementById("tt-title").textContent = rec.State;
+      document.getElementById("tt-gap").textContent = rec.gap.toFixed(4);
+      document.getElementById("tt-cluster").textContent = "C"+rec.cluster+" — "+clusterNames[rec.cluster];
+      document.getElementById("tt-infra").textContent = rec.infra.toFixed(1);
+      document.getElementById("tt-policy").textContent = rec.policy_norm.toFixed(4);
+      document.getElementById("tt-cat").textContent = rec.category;
+    })
+    .on("mouseleave", function(){ tt.style.display = "none"; })
+    .on("click", function(d) {
+      var st = FIPS_STATE[String(d.id).padStart(2,"0")];
+      if (!byState[st]) return;
+      selectedCluster = selectedCluster===byState[st].cluster ? null : byState[st].cluster;
+      doHighlight();
+    });
+
+  // internal borders only: https://observablehq.com/@d3/us-state-choropleth/2
+  svg.append("path")
+    .datum(topojson.mesh(us, us.objects.states, function(a,b){return a!==b;}))
+    .attr("class","state-border").attr("d", path);
+
+  svg.selectAll("text.stlbl").data(statesGeo.features).enter()
+    .append("text").attr("class","stlbl")
+    .attr("transform", function(d) {
+      var c = path.centroid(d);
+      return isNaN(c[0]) ? "translate(-999,-999)" : "translate("+c+")";
+    })
+    .attr("text-anchor","middle").attr("dominant-baseline","central")
+    .attr("font-size","8px").attr("fill","#fff").attr("font-weight","bold")
+    .attr("pointer-events","none")
+    .text(function(d) { return FIPS_STATE[String(d.id).padStart(2,"0")]||""; });
+}
+
+
+// --- highlight + stats (Murray ch 12) ---
+
+function doHighlight() {
+  var c = selectedCluster;
+
+  d3.selectAll(".state-path").classed("dimmed", function(d) {
+    if (c===null) return false;
+    var st = FIPS_STATE[String(d.id).padStart(2,"0")];
+    return !byState[st] || byState[st].cluster !== c;
+  }).classed("selected", function(d) {
+    if (c===null) return false;
+    var st = FIPS_STATE[String(d.id).padStart(2,"0")];
+    return byState[st] && byState[st].cluster===c;
+  });
+
+  d3.selectAll("g.nd circle, g.nd text").style("opacity", function() {
+    if (c===null) return 1;
+    var pcls = d3.select(this.parentNode).attr("class")||"";
+    var m = pcls.match(/nd-c(\d+)/);
+    return m && +m[1]===c ? 1 : 0.15;
+  });
+  d3.selectAll("path.lnk").attr("stroke-opacity", function() {
+    if (c===null) return 0.5;
+    return (d3.select(this).attr("class")||"").indexOf("lnk-c"+c) >= 0 ? 0.9 : 0.06;
+  });
+
+  var sumG=0, sumI=0, sumP=0, cnt=0;
+  for (var i=0; i<DATA.length; i++) {
+    if (c===null || DATA[i].cluster===c) {
+      sumG += DATA[i].gap; sumI += DATA[i].infra; sumP += DATA[i].policy_norm;
+      cnt++;
+    }
+  }
+  document.getElementById("s-count").textContent = cnt;
+  document.getElementById("s-gap").textContent   = cnt ? (sumG/cnt).toFixed(3) : "—";
+  document.getElementById("s-infra").textContent  = cnt ? (sumI/cnt).toFixed(1) : "—";
+  document.getElementById("s-policy").textContent = cnt ? (sumP/cnt).toFixed(4) : "—";
+  document.getElementById("s-name").textContent = c===null ? "All clusters" : "C"+c+": "+clusterNames[c];
+}
+
+function resetSelection() { selectedCluster = null; doHighlight(); }
+
+
+// --- load data (Murray ch 5) ---
 
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
-  d3.csv("./data/gap_only_clustered.csv")
-]).then(function(results) {
-  usMapData = results[0];
-  var csv = results[1];
+  d3.csv("data/gap_only_clustered.csv")
+]).then(function(res) {
+  var us = res[0], csv = res[1];
 
-  stateRows = csv.map(function(row) {
-    return {
-      State: row.State,
-      gap: +row.gap_score,
-      cluster: +row.Gap_Cluster,
-      infra: +row.chargers_per_100k,
-      policy_norm: +row.policy_norm,
-      category: row.category
+  if (csv.length !== 51) console.warn("expected 51 rows got " + csv.length);
+
+  for (var i = 0; i < csv.length; i++) {
+    var r = csv[i];
+    var g = parseFloat(r.gap_score);
+    if (isNaN(g)) { console.warn("bad gap_score for "+r.State); continue; }
+    var cl = parseInt(r.Gap_Cluster);
+    if (cl < 1 || cl > 4) console.warn("cluster "+cl+" out of range for "+r.State);
+
+    var obj = {
+      State: r.State, gap: g, cluster: cl,
+      infra: parseFloat(r.chargers_per_100k),
+      policy_norm: parseFloat(r.policy_norm),
+      category: r.category
     };
-  });
+    DATA.push(obj);
+    byState[r.State] = obj;
+  }
+  //console.log(DATA.length + " states loaded");
+  //console.log("gap range:", d3.extent(DATA, function(d){return d.gap}));
 
-  stateLookup = {};
-  stateRows.forEach(function(row) {
-    stateLookup[row.State] = row;
-  });
+  drawDendro(DATA);
+  drawMap(us);
+  doHighlight();
 
-  renderTree(stateRows);
-  renderMap(usMapData);
-  refreshSelection();
+}).catch(function(e) {
+  console.error("load failed:", e);
+  alert("Could not load data — check that gap_only_clustered.csv is in the data/ folder.");
 });
 
+// TODO: map doesnt redraw on resize, only the dendro does
 window.addEventListener("resize", function() {
-  if (!stateRows.length || !usMapData) return;
-  renderTree(stateRows);
-  renderMap(usMapData);
-  refreshSelection();
+  if (DATA.length) drawDendro(DATA);
+  //if (_usTopoCache) drawMap(_usTopoCache); // this works but makes resize laggy
 });
 </script>
-
 </body>
 </html>
