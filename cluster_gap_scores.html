@@ -8,9 +8,7 @@
 <!-- References:
      Observable tidy tree: https://observablehq.com/@d3/tree/2
      Observable US choropleth: https://observablehq.com/@d3/us-state-choropleth/2
-     Murray, Scott. Interactive Data Visualization for the Web, 2nd Ed. O'Reilly 2017
-       ch 5 (csv parsing), ch 6 (data bindng), ch 12 (selections), ch 14 (geomapping)
--->
+     -->
 
 <script src="./lib/d3.v5.min.js"></script>
 <script src="./lib/topojson.v2.min.js"></script>
@@ -220,7 +218,6 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
 
 <script>
 
-// k=4 ward linkage from clustering_analysis.ipynb
 var clusterNames = {
   1: "Over-built (high infra)",
   2: "High gap — most underserved",
@@ -239,12 +236,10 @@ var byState = {};
 var selectedCluster = null;
 var tt = document.getElementById("tooltip");
 
-// gap range is asymmetric (-1.2 to +0.8) so diverging works better than sequential
 var colorScale = d3.scaleDiverging(d3.interpolateRdBu).domain([-1.2, 0, 0.8]);
 
 
-// --- dendro ---
-// based on https://observablehq.com/@d3/tree/2
+// --- dendrogram ---
 
 function drawDendro(data) {
   d3.select("#my_dataviz_dendro").selectAll("svg").remove();
@@ -257,8 +252,7 @@ function drawDendro(data) {
     .attr("width", w).attr("height", h)
     .append("g").attr("transform", "translate(40,0)");
 
-  // build tree: root -> cluster groups -> state leaves
-  var ordering = [2, 4, 3, 1]; // underserved first
+    var ordering = [2, 4, 3, 1]; 
   var treeData = {name: "root", children: []};
   for (var i = 0; i < ordering.length; i++) {
     var cid = ordering[i];
@@ -276,13 +270,11 @@ function drawDendro(data) {
     treeData.children.push({name: "C"+cid, cluster: cid, children: leaves});
   }
 
-  // cluster layout spaces leaves evenly (Murray ch 13)
   var layout = d3.cluster().size([h, w - 160]);
   var root = d3.hierarchy(treeData);
   layout(root);
 
-  // root.links() + linkHorizontal from https://observablehq.com/@d3/tree/2
-  svg.selectAll("path.lnk")
+    svg.selectAll("path.lnk")
     .data(root.links())
     .enter().append("path")
     .attr("class", function(d) {
@@ -363,14 +355,11 @@ function drawDendro(data) {
     .style("fill", function(d){
       return d.depth===0 ? "#666" : (d.data.cluster ? clusterColors[d.data.cluster] : "#444");
     })
-    // paint-order halo: https://observablehq.com/@d3/tree/2
     .attr("stroke","white").attr("stroke-width",3).attr("paint-order","stroke");
 }
 
 
 // --- map ---
-// based on Murray ch 14 + https://observablehq.com/@d3/us-state-choropleth/2
-
 var _usTopoCache = null;
 
 function drawMap(us) {
@@ -384,8 +373,6 @@ function drawMap(us) {
 
   var statesGeo = topojson.feature(us, us.objects.states);
 
-  // manual bounds -> scale -> translate (Murray ch 14)
-  // fitSize would be cleaner but our d3 build doesn't have it
   var proj = d3.geoAlbersUsa().scale(1).translate([0,0]);
   var path = d3.geoPath().projection(proj);
   var b = path.bounds(statesGeo);
@@ -426,7 +413,6 @@ function drawMap(us) {
       doHighlight();
     });
 
-  // internal borders only: https://observablehq.com/@d3/us-state-choropleth/2
   svg.append("path")
     .datum(topojson.mesh(us, us.objects.states, function(a,b){return a!==b;}))
     .attr("class","state-border").attr("d", path);
@@ -444,7 +430,7 @@ function drawMap(us) {
 }
 
 
-// --- highlight + stats (Murray ch 12) ---
+
 
 function doHighlight() {
   var c = selectedCluster;
@@ -487,9 +473,8 @@ function doHighlight() {
 function resetSelection() { selectedCluster = null; doHighlight(); }
 
 
-// --- load data (Murray ch 5) ---
-
 Promise.all([
+     // https://github.com/topojson/us-atlas?tab=readme-ov-file
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
   d3.csv("data/gap_only_clustered.csv")
 ]).then(function(res) {
@@ -520,7 +505,6 @@ Promise.all([
   alert("Could not load data — check that gap_only_clustered.csv is in the data/ folder.");
 });
 
-// TODO: map doesnt redraw on resize, only the dendro does
 window.addEventListener("resize", function() {
   if (DATA.length) drawDendro(DATA);
   //if (_usTopoCache) drawMap(_usTopoCache); // this works but makes resize laggy
