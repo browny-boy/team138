@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EV Gap Score Clustering Dashboard - Team 138</title>
 
-<script src="./lib/d3.v5.min.js"></script>
-<script src="./lib/topojson.v2.min.js"></script>
+<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="../lib/topojson.v2.min.js"></script>
 
 <style>
 * {
@@ -81,9 +81,9 @@ header p {
   overflow: hidden;
 }
 
-#panel-dendro { grid-row: 1; grid-column: 1; }
-#panel-map    { grid-row: 1; grid-column: 2; }
-#panel-stats  { grid-row: 2; grid-column: 1 / 3; }
+#panel-tree  { grid-row: 1; grid-column: 1; }
+#panel-map   { grid-row: 1; grid-column: 2; }
+#panel-stats { grid-row: 2; grid-column: 1 / 3; }
 
 #panel-stats .panel-body {
   top: 28px;
@@ -143,37 +143,6 @@ header p {
   background: #eeeeee;
 }
 
-#tooltip {
-  position: fixed;
-  pointer-events: none;
-  background: #ffffff;
-  border: 1px solid #aaaaaa;
-  padding: 8px 10px;
-  font-size: 11px;
-  max-width: 210px;
-  display: none;
-  z-index: 1000;
-  line-height: 1.6;
-}
-
-#tooltip .tt-title {
-  font-weight: bold;
-  margin-bottom: 3px;
-  font-size: 12px;
-}
-
-#tooltip .tt-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: #555555;
-}
-
-#tooltip .tt-row span:last-child {
-  color: #222222;
-  font-weight: bold;
-}
-
 .state-shape {
   stroke: #ffffff;
   stroke-width: 0.5px;
@@ -218,16 +187,16 @@ header p {
 <header>
   <div>
     <h1>EV Infrastructure Gap Score — Hierarchical Clustering Dashboard · Team 138</h1>
-    <p>Ward linkage · Feature: gap score · Click any node, branch, or state to highlight a cluster</p>
+    <p>Tidy tree + choropleth · Click any branch or state to highlight a cluster</p>
   </div>
 </header>
 
 <div id="main">
 
-  <div class="panel" id="panel-dendro">
-    <div class="panel-title">Dendrogram — Ward linkage on gap score</div>
+  <div class="panel" id="panel-tree">
+    <div class="panel-title">Tidy tree — cluster membership by state</div>
     <div class="panel-body">
-      <div id="dendrogram-wrap" style="width:100%;height:100%;"></div>
+      <div id="tree-wrap" style="width:100%;height:100%;"></div>
     </div>
   </div>
 
@@ -281,21 +250,9 @@ header p {
 
 </div>
 
-<div id="tooltip">
-  <div class="tt-title" id="tt-title"></div>
-  <div class="tt-row"><span>Gap score</span><span id="tt-gap"></span></div>
-  <div class="tt-row"><span>Cluster</span><span id="tt-cluster"></span></div>
-  <div class="tt-row"><span>Per 100k</span><span id="tt-infra"></span></div>
-  <div class="tt-row"><span>Policy norm</span><span id="tt-policy"></span></div>
-  <div class="tt-row"><span>Category</span><span id="tt-cat"></span></div>
-</div>
-
 <script>
 var LEGEND_HEIGHT = 32;
-var MAP_FIT = 0.93;
-var MAP_SHIFT_X = 0.035;
-var MAP_SHIFT_Y = 0.035;
-var NEVI_PRIORITY_THRESHOLD = 0.3;
+var MAP_PADDING = 20;
 
 var clusterMeta = {
   1: { label: "Over-built (high infra)", color: "#d73027" },
@@ -323,12 +280,12 @@ Object.keys(stateToFips).forEach(function(abbr) {
 var stateRows = [];
 var stateLookup = {};
 var activeCluster = null;
-var tooltipEl = document.getElementById("tooltip");
+var usMapData = null;
 
 var gapColor = d3.scaleDiverging(d3.interpolateRdBu)
   .domain([-1.2, 0, 0.8]);
 
-function buildClusterTree(rows) {
+function buildTreeData(rows) {
   var clusterOrder = [2, 4, 3, 1];
   var root = { name: "root", children: [] };
 
@@ -343,6 +300,7 @@ function buildClusterTree(rows) {
       children: members.map(function(row) {
         return {
           name: row.State,
+          State: row.State,
           cluster: row.cluster,
           gap: row.gap,
           infra: row.infra,
@@ -357,29 +315,58 @@ function buildClusterTree(rows) {
   return root;
 }
 
-function renderDendrogram(rows) {
-  d3.select("#dendrogram-wrap").selectAll("svg").remove();
+function titleText(d) {
+  return [
+    (d.State || d.name),
+    "Gap score: " + (+d.gap).toFixed(4),
+    "Cluster: C" + d.cluster + " — " + clusterMeta[d.cluster].label,
+    "Chargers / 100k: " + (+d.infra).toFixed(1),
+    "Policy norm: " + (+d.policy_norm).toFixed(4),
+    "Category: " + d.category
+  ].join("\n");
+}
 
-  var container = document.getElementById("dendrogram-wrap");
+function clusterTitleText(clusterId) {
+  var members = stateRows.filter(function(row) {
+    return row.cluster === clusterId;
+  });
+
+  return [
+    clusterMeta[clusterId].label,
+    "States: " + members.length,
+    "Avg gap score: " + d3.mean(members, function(d) { return d.gap; }).toFixed(3),
+    "Avg chargers / 100k: " + d3.mean(members, function(d) { return d.infra; }).toFixed(1),
+    "Avg policy norm: " + d3.mean(members, function(d) { return d.policy_norm; }).toFixed(4)
+  ].join("\n");
+}
+
+function renderTree(rows) {
+  d3.select("#tree-wrap").selectAll("svg").remove();
+
+  var container = document.getElementById("tree-wrap");
   var width = container.clientWidth;
   var height = container.clientHeight;
 
   if (width < 10 || height < 10) return;
 
-  var svg = d3.select("#dendrogram-wrap")
+  var svg = d3.select("#tree-wrap")
     .append("svg")
     .attr("width", width)
     .attr("height", height);
 
   var g = svg.append("g")
-    .attr("transform", "translate(40,0)");
+    .attr("transform", "translate(40,20)");
 
-  var root = d3.hierarchy(buildClusterTree(rows));
-  var layout = d3.cluster().size([height, width - 160]);
+  // Source: https://observablehq.com/@d3/tree/2
+  var root = d3.hierarchy(buildTreeData(rows));
 
-  layout(root);
+  // Source: https://observablehq.com/@d3/tree/2
+  var tree = d3.tree().size([height - 40, width - 180]);
+
+  tree(root);
 
   g.selectAll(".tree-link")
+    // Source: https://observablehq.com/@d3/tree/2
     .data(root.links())
     .enter()
     .append("path")
@@ -388,6 +375,7 @@ function renderDendrogram(rows) {
       while (!node.data.cluster && node.children) node = node.children[0];
       return "tree-link tree-link-c" + (node.data.cluster || 0);
     })
+    // Source: https://observablehq.com/@d3/tree/2
     .attr("d", d3.linkHorizontal()
       .x(function(d) { return d.y; })
       .y(function(d) { return d.x; }))
@@ -398,55 +386,27 @@ function renderDendrogram(rows) {
     })
     .attr("stroke-opacity", 0.5);
 
-  var nodes = g.selectAll(".tree-node")
+  var node = g.selectAll(".tree-node")
     .data(root.descendants())
     .enter()
     .append("g")
     .attr("class", function(d) {
       return "tree-node tree-node-c" + (d.data.cluster || "root");
     })
+    // Source: https://observablehq.com/@d3/tree/2
     .attr("transform", function(d) {
       return "translate(" + d.y + "," + d.x + ")";
     })
     .style("cursor", function(d) {
       return d.data.cluster ? "pointer" : "default";
+    })
+    .on("click", function(d) {
+      if (!d.data.cluster) return;
+      activeCluster = activeCluster === d.data.cluster ? null : d.data.cluster;
+      refreshSelection();
     });
 
-  nodes.on("click", function(d) {
-    if (!d.data.cluster) return;
-    activeCluster = activeCluster === d.data.cluster ? null : d.data.cluster;
-    refreshSelection();
-  });
-
-  nodes.on("mousemove", function(d) {
-    if (d.data.isLeaf) {
-      showTooltip(d3.event, d.data);
-      return;
-    }
-
-    if (d.data.cluster) {
-      var members = stateRows.filter(function(row) {
-        return row.cluster === d.data.cluster;
-      });
-
-      tooltipEl.style.display = "block";
-      tooltipEl.style.left = (d3.event.clientX + 14) + "px";
-      tooltipEl.style.top = (d3.event.clientY - 10) + "px";
-
-      document.getElementById("tt-title").textContent = clusterMeta[d.data.cluster].label;
-      document.getElementById("tt-gap").textContent = d3.mean(members, function(m) { return m.gap; }).toFixed(3);
-      document.getElementById("tt-cluster").textContent = members.length + " states";
-      document.getElementById("tt-infra").textContent = d3.mean(members, function(m) { return m.infra; }).toFixed(1);
-      document.getElementById("tt-policy").textContent = d3.mean(members, function(m) { return m.policy_norm; }).toFixed(4);
-      document.getElementById("tt-cat").textContent = "—";
-    }
-  });
-
-  nodes.on("mouseleave", function() {
-    tooltipEl.style.display = "none";
-  });
-
-  nodes.append("circle")
+  node.append("circle")
     .attr("r", function(d) {
       if (d.depth === 0) return 4;
       return d.data.isLeaf ? 4 : 7;
@@ -464,26 +424,25 @@ function renderDendrogram(rows) {
     })
     .attr("stroke-width", 2);
 
-  nodes.append("text")
+  node.append("text")
     .attr("dy", "0.31em")
-    .attr("x", function(d) {
-      return d.data.isLeaf ? 10 : -10;
-    })
-    .attr("text-anchor", function(d) {
-      return d.data.isLeaf ? "start" : "end";
-    })
-    .style("font-size", function(d) {
-      return d.data.isLeaf ? "9px" : "10px";
-    })
-    .style("font-weight", function(d) {
-      return d.data.isLeaf ? "normal" : "bold";
-    })
+    .attr("x", function(d) { return d.children ? -10 : 10; })
+    .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
+    .style("font-size", function(d) { return d.children ? "10px" : "9px"; })
+    .style("font-weight", function(d) { return d.children ? "bold" : "normal"; })
     .style("fill", function(d) {
       if (d.depth === 0) return "#666666";
       return d.data.cluster ? clusterMeta[d.data.cluster].color : "#444444";
     })
     .text(function(d) {
       return d.depth === 0 ? "" : d.data.name;
+    });
+
+  node.append("title")
+    .text(function(d) {
+      if (d.data.isLeaf) return titleText(d.data);
+      if (d.data.cluster) return clusterTitleText(d.data.cluster);
+      return "";
     });
 }
 
@@ -500,16 +459,8 @@ function renderMap(us) {
 
   var states = topojson.feature(us, us.objects.states);
 
-  var projection = d3.geoAlbersUsa()
-    .fitSize([width * MAP_FIT, height * MAP_FIT], states);
-
-  var translate = projection.translate();
-  projection.translate([
-    translate[0] + width * MAP_SHIFT_X,
-    translate[1] + height * MAP_SHIFT_Y
-  ]);
-
-  var path = d3.geoPath().projection(projection);
+  // Staying close to the Observable choropleth pattern: use geoPath().fitSize(...)
+  var path = d3.geoPath().fitSize([width - MAP_PADDING, height - MAP_PADDING], states);
 
   svg.append("g")
     .selectAll(".state-shape")
@@ -518,45 +469,42 @@ function renderMap(us) {
     .append("path")
     .attr("class", "state-shape")
     .attr("d", path)
+    .attr("transform", "translate(10,10)")
     .attr("fill", function(d) {
       var abbr = fipsToState[String(d.id).padStart(2, "0")];
       var row = stateLookup[abbr];
       return row ? gapColor(row.gap) : "#dddddd";
     })
     .attr("opacity", 0.85)
-    .on("mousemove", function(d) {
-      var abbr = fipsToState[String(d.id).padStart(2, "0")];
-      if (stateLookup[abbr]) showTooltip(d3.event, stateLookup[abbr]);
-    })
-    .on("mouseleave", function() {
-      tooltipEl.style.display = "none";
-    })
     .on("click", function(d) {
       var abbr = fipsToState[String(d.id).padStart(2, "0")];
       if (!stateLookup[abbr]) return;
-
-      activeCluster = activeCluster === stateLookup[abbr].cluster
-        ? null
-        : stateLookup[abbr].cluster;
-
+      activeCluster = activeCluster === stateLookup[abbr].cluster ? null : stateLookup[abbr].cluster;
       refreshSelection();
+    })
+    .append("title")
+    .text(function(d) {
+      var abbr = fipsToState[String(d.id).padStart(2, "0")];
+      var row = stateLookup[abbr];
+      return row ? titleText(row) : "";
     });
 
   svg.append("path")
-    .datum(topojson.mesh(us, us.objects.states, function(a, b) {
-      return a !== b;
-    }))
+    // Source: https://observablehq.com/@d3/us-state-choropleth/2
+    .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
     .attr("class", "state-border")
+    .attr("transform", "translate(10,10)")
     .attr("d", path);
 
-  svg.selectAll(".state-label")
+  svg.append("g")
+    .selectAll(".state-label")
     .data(states.features)
     .enter()
     .append("text")
     .attr("class", "state-label")
     .attr("transform", function(d) {
-      var center = path.centroid(d);
-      return isNaN(center[0]) ? "translate(-999,-999)" : "translate(" + center + ")";
+      var c = path.centroid(d);
+      return isNaN(c[0]) ? "translate(-999,-999)" : "translate(" + (c[0] + 10) + "," + (c[1] + 10) + ")";
     })
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "central")
@@ -567,24 +515,6 @@ function renderMap(us) {
     .text(function(d) {
       return fipsToState[String(d.id).padStart(2, "0")] || "";
     });
-}
-
-function showTooltip(evt, row) {
-  tooltipEl.style.display = "block";
-  tooltipEl.style.left = (evt.clientX + 14) + "px";
-  tooltipEl.style.top = (evt.clientY - 10) + "px";
-
-  document.getElementById("tt-title").textContent = row.State || row.name;
-  document.getElementById("tt-gap").textContent = (+row.gap).toFixed(4);
-  document.getElementById("tt-cluster").textContent = "C" + row.cluster + " — " + clusterMeta[row.cluster].label;
-  document.getElementById("tt-infra").textContent = (+row.infra).toFixed(1);
-  document.getElementById("tt-policy").textContent = (+row.policy_norm).toFixed(4);
-
-  var categoryText = row.category;
-  if (row.gap > NEVI_PRIORITY_THRESHOLD && row.category === "Underserved") {
-    categoryText += " ★ NEVI priority";
-  }
-  document.getElementById("tt-cat").textContent = categoryText;
 }
 
 function clearSelection() {
@@ -613,7 +543,7 @@ function refreshSelection() {
       var className = d3.select(this.parentNode).attr("class") || "";
       var match = className.match(/tree-node-c(\d+)/);
       if (!match) return 0.2;
-      return +match[1] === clusterId ? 1 : 0.15;
+      return (+match[1] === clusterId) ? 1 : 0.15;
     });
 
   d3.selectAll(".tree-link")
@@ -629,14 +559,13 @@ function refreshSelection() {
 
   document.getElementById("stat-count").textContent = selectedRows.length;
 
-  if (selectedRows.length > 0) {
-    var avgGap = d3.mean(selectedRows, function(row) { return row.gap; });
-    var avgInfra = d3.mean(selectedRows, function(row) { return row.infra; });
-    var avgPolicy = d3.mean(selectedRows, function(row) { return row.policy_norm; });
-
-    document.getElementById("stat-gap").textContent = avgGap.toFixed(3);
-    document.getElementById("stat-infra").textContent = avgInfra.toFixed(1);
-    document.getElementById("stat-policy").textContent = avgPolicy.toFixed(4);
+  if (selectedRows.length) {
+    document.getElementById("stat-gap").textContent =
+      d3.mean(selectedRows, function(d) { return d.gap; }).toFixed(3);
+    document.getElementById("stat-infra").textContent =
+      d3.mean(selectedRows, function(d) { return d.infra; }).toFixed(1);
+    document.getElementById("stat-policy").textContent =
+      d3.mean(selectedRows, function(d) { return d.policy_norm; }).toFixed(4);
   } else {
     document.getElementById("stat-gap").textContent = "—";
     document.getElementById("stat-infra").textContent = "—";
@@ -650,51 +579,37 @@ function refreshSelection() {
 
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
-  d3.csv("data/gap_only_clustered.csv")
+  d3.csv("../data/gap_only_clustered.csv")
 ]).then(function(results) {
-  var us = results[0];
+  usMapData = results[0];
   var csv = results[1];
 
-  if (csv.length !== 51) {
-    console.warn("Expected 51 rows, got " + csv.length);
-  }
-
-  stateRows = [];
-  stateLookup = {};
-
-  csv.forEach(function(row) {
-    var gap = parseFloat(row.gap_score);
-    var cluster = parseInt(row.Gap_Cluster, 10);
-
-    if (isNaN(gap)) {
-      console.warn("Skipping row with invalid gap_score for", row.State);
-      return;
-    }
-
-    var record = {
+  stateRows = csv.map(function(row) {
+    return {
       State: row.State,
-      gap: gap,
-      cluster: cluster,
-      infra: parseFloat(row.chargers_per_100k),
-      policy_norm: parseFloat(row.policy_norm),
+      gap: +row.gap_score,
+      cluster: +row.Gap_Cluster,
+      infra: +row.chargers_per_100k,
+      policy_norm: +row.policy_norm,
       category: row.category
     };
-
-    stateRows.push(record);
-    stateLookup[row.State] = record;
   });
 
-  renderDendrogram(stateRows);
-  renderMap(us);
+  stateLookup = {};
+  stateRows.forEach(function(row) {
+    stateLookup[row.State] = row;
+  });
+
+  renderTree(stateRows);
+  renderMap(usMapData);
   refreshSelection();
-}).catch(function(error) {
-  console.error("Data load failed:", error);
-  alert("Could not load data. Make sure gap_only_clustered.csv is in the data folder.");
 });
 
 window.addEventListener("resize", function() {
-  if (!stateRows.length) return;
-  renderDendrogram(stateRows);
+  if (!stateRows.length || !usMapData) return;
+  renderTree(stateRows);
+  renderMap(usMapData);
+  refreshSelection();
 });
 </script>
 
