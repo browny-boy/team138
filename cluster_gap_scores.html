@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>EV Gap Score Clustering Dashboard - Team 138</title>
 
-<script type="text/javascript" src="/lib/d3.v5.min.js"></script>
-<script type="text/javascript" src="/lib/topojson.v2.min.js"></script>
+<script type="text/javascript" src="./lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="./lib/topojson.v2.min.js"></script>
 
 <style>
 * {
@@ -579,7 +579,7 @@ function refreshSelection() {
 
 Promise.all([
   d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"),
-  d3.csv("/data/gap_only_clustered.csv")
+  d3.csv("./data/gap_only_clustered.csv")
 ]).then(function(results) {
   usMapData = results[0];
   var csv = results[1];
