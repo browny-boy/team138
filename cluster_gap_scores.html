@@ -172,6 +172,7 @@ header p  { font-size: 11px; color: #666666; margin-top: 2px; }
       <div class="stat-block">
         <div class="stat-label">Avg chargers / 100k</div>
         <div class="stat-value" id="s-infra">—</div>
+        
       </div>
       <div class="stat-block">
         <div class="stat-label">Avg policy norm</div>
@@ -205,7 +206,7 @@ const clusterNames = {
 };
 
 const clusterColors = { 1: "#d73027", 2: "#4575b4", 3: "#f46d43", 4: "#74add1" };
-// Harcode FIPS ids for state abbr
+// Hardocode FIPS Ids for State abbr
 const FIPS = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09","DE":"10",
   "DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17","IN":"18","IA":"19",
@@ -265,7 +266,7 @@ function buildTreeData(data) {
   };
 }
 
-// https://observablehq.com/@d3/cluster/2
+// adapted from: https://observablehq.com/@d3/cluster/2
 function drawDendro(data) {
   d3.select("#dendrogram").selectAll("svg").remove();
 
@@ -293,7 +294,7 @@ function drawDendro(data) {
     .attr("style",   "max-width:100%; height:auto; font:10px sans-serif;");
 
   svg.append("g")
-    .attr("fill", "none")
+    .attr("fill",           "none")
     .attr("stroke-opacity", 0.5)
     .attr("stroke-width",   1.5)
     .selectAll("path")
@@ -373,6 +374,7 @@ function drawDendro(data) {
 
 // --- map ---
 //   https://d3-graph-gallery.com/graph/choropleth_basic.html
+
 var cachedTopoUS = null;
 
 function drawMap(us) {
@@ -475,15 +477,23 @@ function doHighlight() {
   const c = selectedCluster;
 
   d3.selectAll(".state-path")
-    .classed("dimmed", d => {
-      if (!c) return false;
-      const state = stateFromFeature(d);
-      return !byState[state] || byState[state].cluster !== c;
+    .classed("dimmed", false)
+    .classed("selected", false)
+    .transition().duration(200)
+    .style("opacity", function(d) {
+      if (!c) return 0.85;
+      var state = stateFromFeature(d);
+      return (byState[state] && byState[state].cluster === c) ? 1 : 0.1;
     })
-    .classed("selected", d => {
-      if (!c) return false;
-      const state = stateFromFeature(d);
-      return byState[state] && byState[state].cluster === c;
+    .style("stroke", function(d) {
+      if (!c) return "#ffffff";
+      var state = stateFromFeature(d);
+      return (byState[state] && byState[state].cluster === c) ? "#333" : "#ffffff";
+    })
+    .style("stroke-width", function(d) {
+      if (!c) return "0.5px";
+      var state = stateFromFeature(d);
+      return (byState[state] && byState[state].cluster === c) ? "2px" : "0.5px";
     });
 
   d3.selectAll("g.nd circle, g.nd text").style("opacity", function() {
