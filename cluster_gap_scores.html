@@ -206,7 +206,7 @@ const clusterNames = {
 };
 
 const clusterColors = { 1: "#d73027", 2: "#4575b4", 3: "#f46d43", 4: "#74add1" };
-// Hardcoide FIPS ids to State abbr
+
 const FIPS = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09","DE":"10",
   "DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17","IN":"18","IA":"19",
@@ -280,7 +280,6 @@ function drawDendro(data) {
 
   d3.cluster().nodeSize([dx, dy])(root);
 
-  // compute vertical extent so SVG height scales to the tree
   var x0 = Infinity, x1 = -Infinity;
   root.each(function(d) {
     if (d.x > x1) x1 = d.x;
@@ -295,7 +294,7 @@ function drawDendro(data) {
     .attr("style",   "max-width:100%; height:auto; font:10px sans-serif;");
 
   svg.append("g")
-    .attr("fill",           "none")
+    .attr("fill", "none")
     .attr("stroke-opacity", 0.5)
     .attr("stroke-width",   1.5)
     .selectAll("path")
@@ -374,7 +373,7 @@ function drawDendro(data) {
 
 
 // --- map ---
-
+//   https://d3-graph-gallery.com/graph/choropleth_basic.html
 var cachedTopoUS = null;
 
 function drawMap(us) {
@@ -396,7 +395,44 @@ function drawMap(us) {
   proj.scale(scale).translate([(width - scale * (b[1][0] + b[0][0])) / 2,
                                 (height - scale * (b[1][1] + b[0][1])) / 2]);
 
-  var statePaths = svg.append("g").selectAll("path")
+  var mouseOver = function(d) {
+    var state = stateFromFeature(d);
+    var rec   = byState[state];
+    if (!rec) return;
+
+    tooltip.style.display = "block";
+    tooltip.style.left    = (d3.event.clientX + 14) + "px";
+    tooltip.style.top     = (d3.event.clientY - 10) + "px";
+    document.getElementById("tooltip-title").textContent    = rec.State;
+    document.getElementById("tooltip-gap").textContent      = rec.gap.toFixed(4);
+    document.getElementById("tooltip-cluster").textContent  = "C" + rec.cluster + " — " + clusterNames[rec.cluster];
+    document.getElementById("tooltip-infra").textContent    = rec.infra.toFixed(1);
+    document.getElementById("tooltip-policy").textContent   = rec.policy_norm.toFixed(4);
+    document.getElementById("tooltip-category").textContent = rec.category;
+
+    d3.selectAll(".state-path")
+      .transition().duration(200)
+      .style("opacity", 0.3);
+    d3.select(this)
+      .transition().duration(200)
+      .style("opacity", 1)
+      .style("stroke", "#333")
+      .style("stroke-width", "1.5px");
+  };
+
+  var mouseLeave = function() {
+    tooltip.style.display = "none";
+    d3.selectAll(".state-path")
+      .transition().duration(200)
+      .style("opacity", 0.85);
+    d3.select(this)
+      .transition().duration(200)
+      .style("stroke", "#ffffff")
+      .style("stroke-width", "0.5px");
+  };
+
+  svg.append("g")
+    .selectAll("path")
     .data(statesGeo.features)
     .enter().append("path")
     .attr("class", "state-path")
@@ -405,30 +441,11 @@ function drawMap(us) {
       var state = stateFromFeature(d);
       return (state && byState[state]) ? colorScale(byState[state].gap) : "#ddd";
     })
-    .attr("opacity", 0.85)
-    .on("mouseover", function(d) {
-      var state = stateFromFeature(d);
-      var rec   = byState[state];
-      if (!rec) return;
-
-      tooltip.style.display = "block";
-      tooltip.style.left    = (d3.event.clientX + 14) + "px";
-      tooltip.style.top     = (d3.event.clientY - 10) + "px";
-      document.getElementById("tooltip-title").textContent    = rec.State;
-      document.getElementById("tooltip-gap").textContent      = rec.gap.toFixed(4);
-      document.getElementById("tooltip-cluster").textContent  = "C" + rec.cluster + " — " + clusterNames[rec.cluster];
-      document.getElementById("tooltip-infra").textContent    = rec.infra.toFixed(1);
-      document.getElementById("tooltip-policy").textContent   = rec.policy_norm.toFixed(4);
-      document.getElementById("tooltip-category").textContent = rec.category;
-
-      statePaths.style("opacity", function(p) { return p === d ? 1 : 0.3; });
-      d3.select(this).style("stroke", "#333").style("stroke-width", "1.5px");
-    })
-    .on("mouseout", function() {
-      tooltip.style.display = "none";
-      statePaths.style("opacity", 0.85);
-      d3.select(this).style("stroke", "#ffffff").style("stroke-width", "0.5px");
-    })
+    .style("opacity", 0.85)
+    .style("stroke", "#ffffff")
+    .style("stroke-width", "0.5px")
+    .on("mouseover", mouseOver)
+    .on("mouseleave", mouseLeave)
     .on("click", function(d) {
       var state = stateFromFeature(d);
       if (!byState[state]) return;
@@ -492,7 +509,6 @@ function doHighlight() {
   document.getElementById("s-name").textContent   = c ? `C${c}: ${clusterNames[c]}` : "All clusters";
 }
 
-// click on empty SVG background resets selection
 d3.select("#map").on("click", function() {
   if (d3.event.target.tagName === "svg") {
     selectedCluster = null;
