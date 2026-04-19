@@ -6,7 +6,7 @@ This project generates state-level EV **Gap Scores**, which measure the differen
 
 ---
 
-##Required Files
+## Required Files
 
 Ensure the following files are in the **same folder**:
 
