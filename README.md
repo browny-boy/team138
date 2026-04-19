@@ -21,7 +21,7 @@ Ensure the following files are in the **same folder**:
 
 ### 1. Install Dependencies
 ```bash
-pip install pandas numpy
+pip install pandas numpy matplotlib scipy scikit-learn
 
 Open the notebook calculate_gap_scores.ipynb and run all cells.
 
@@ -30,7 +30,7 @@ Open the notebook calculate_gap_scores.ipynb and run all cells.
 Run the clustering script after generating the gap scores.
 
 ### Requirements
-pip install pandas numpy matplotlib scipy scikit-learn
+
 
 ### Run
 Clustering.ipynb
