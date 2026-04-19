@@ -26,14 +26,7 @@ pip install pandas numpy matplotlib scipy scikit-learn
 ### 2. Calculate Gap Scores
 Open the notebook calculate_gap_scores.ipynb and run all cells.
 
-### 3. Run Clustering
-
-Run the clustering script after generating the gap scores.
-
-### Requirements
-
-
-### Run
+### 3. Run
 Clustering.ipynb
 
 ### Input
