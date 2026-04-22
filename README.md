@@ -1,8 +1,21 @@
 # team138
 
-EV Gap Score Generation
+### 1. Install Dependencies
+pip install pandas numpy matplotlib scipy scikit-learn
 
-This project generates state-level EV **Gap Scores**, which measure the difference between EV policy strength and charging infrastructure.
+### Clean Data
+This generates clean_data.csv for the gap score calculation
+Ensure the following files are in the **same folder**:
+### Required files
+- `state_recency.csv`
+- `zip_dma.csv`
+- `laws_and_incentives.csv`
+- `data_clean.ipynb`
+
+
+### EV Gap Score Generation
+
+This generates state-level EV **Gap Scores**, which measure the difference between EV policy strength and charging infrastructure.
 
 ---
 
@@ -14,20 +27,19 @@ Ensure the following files are in the **same folder**:
 - `clean_data.csv`
 - `state_recency.csv`
 - `zip_dma.csv`
+- `vehicle_registration_data.csv`
 
 ---
 
-## How to Run
-
-### 1. Install Dependencies
-```bash
-pip install pandas numpy matplotlib scipy scikit-learn
-
 ### 2. Calculate Gap Scores
 Open the notebook calculate_gap_scores.ipynb and run all cells.
+You can verify the correlation coefficient between gap score and EV adoption rate
+This will generate gap_scores.csv for clustering code. 
 
-### 3. Run
-Clustering.ipynb
+### Run Clusetering Algorithm
+This generates state-level EV **Clustering**, which creates a hierarchical clustering of each state depending on their gap score. 
+
+### Open Clustering.ipynb
 
 ### Input
 - gap_scores.csv (ensure you ran the previous python file so you have this file in the same folder)
@@ -35,3 +47,5 @@ Clustering.ipynb
 ### Output
 - gap_score_only_dendrogram.png  
 - gap_only_clustered.csv
+
+### Open Dendrogram Locally
