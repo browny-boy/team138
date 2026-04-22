@@ -31,21 +31,21 @@ Ensure the following files are in the **same folder**:
 
 ---
 
-### 2. Calculate Gap Scores
+### Calculate Gap Scores
 Open the notebook calculate_gap_scores.ipynb and run all cells.
 You can verify the correlation coefficient between gap score and EV adoption rate
 This will generate gap_scores.csv for clustering code. 
-
-### Run Clusetering Algorithm
+--- 
+## Run Clusetering Algorithm
 This generates state-level EV **Clustering**, which creates a hierarchical clustering of each state depending on their gap score. 
 
-### Open Clustering.ipynb
+## Open Clustering.ipynb
 
-### Input
+## Input
 - gap_scores.csv (ensure you ran the previous python file so you have this file in the same folder)
 
-### Output
+## Output
 - gap_score_only_dendrogram.png  
 - gap_only_clustered.csv
-
+---
 ### Open Dendrogram Locally
