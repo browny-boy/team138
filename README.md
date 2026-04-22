@@ -1,7 +1,9 @@
 # team138
 
 ## 1. Install Dependencies
+```bash
 pip install pandas numpy matplotlib scipy scikit-learn
+```
 
 ---
 
@@ -43,11 +45,11 @@ This generates state-level EV **Clustering**, which creates a hierarchical clust
 ## Open Clustering.ipynb
 
 ## Input
-- gap_scores.csv (ensure you ran the previous python file so you have this file in the same folder)
+- `gap_scores.csv` (ensure you ran the previous python file so you have this file in the same folder)
 
 ## Output
-- gap_score_only_dendrogram.png  
-- gap_only_clustered.csv
+- `gap_score_only_dendrogram.png`
+- `gap_only_clustered.csv`
 ---
 ### Open Dendrogram Locally
 
@@ -56,7 +58,7 @@ This generates state-level EV **Clustering**, which creates a hierarchical clust
 - For Visual Studio install 'Live Server' by Ritwick Dey
 
 ## Required Files
-- cluster_gap_score.html
+- `cluster_gap_score.html`
 - data >> `gap_only_clustered.csv`
 - lib >> `d3.v5.min.js` and `topojson.v2.min.js`
 
