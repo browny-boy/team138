@@ -215,6 +215,7 @@ const clusterColors = {
   3: "#f46d43",
   4: "#74add1"
 };
+
 // Hard code ST FIPS. Source: https://www.census.gov/library/reference/code-lists/ansi.html#state
 const FIPS = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09","DE":"10",
@@ -259,19 +260,16 @@ function hideTooltip() {
 // --- dendrogram ---
 
 function buildTreeData(data) {
-  const clusterOrder = [2, 4, 3, 1]; 
+  const clusterOrder = [2, 4, 3, 1];
 
   return {
     name: "root",
-    children: clusterOrder.map(clusterId => {
-      const members = data
+    children: clusterOrder.map(clusterId => ({
+      name: `C${clusterId}`,
+      cluster: clusterId,
+      children: data
         .filter(d => d.cluster === clusterId)
-        .sort((a, b) => b.gap - a.gap);
-
-      return {
-        name: `C${clusterId}`,
-        cluster: clusterId,
-        children: members.map(m => ({
+        .map(m => ({
           name: m.State,
           cluster: clusterId,
           gap: m.gap,
@@ -280,8 +278,7 @@ function buildTreeData(data) {
           category: m.category,
           isLeaf: true
         }))
-      };
-    })
+    }))
   };
 }
 
@@ -292,7 +289,10 @@ function drawDendro(data) {
   const width = container.clientWidth;
   if (width < 10) return;
 
-  const root = d3.hierarchy(buildTreeData(data));
+  // Chained: d3.hierarchy + root.sort by gap score descending within each cluster
+  const root = d3.hierarchy(buildTreeData(data))
+    .sort((a, b) => d3.descending(a.data.gap, b.data.gap));
+
   const dx = 10;
   const dy = width / (root.height + 1);
 
@@ -568,7 +568,7 @@ d3.select("#map").on("click", function() {
 // --- load data ---
 
 Promise.all([
-  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json"), // topojson data for US map
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json"),
   d3.csv("data/gap_only_clustered.csv")
 ]).then(([us, csv]) => {
   cachedUS = us;
