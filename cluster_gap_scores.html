@@ -215,7 +215,7 @@ const clusterColors = {
   3: "#f46d43",
   4: "#74add1"
 };
-
+// Hard code ST FIPS. Source: https://www.census.gov/library/reference/code-lists/ansi.html#state
 const FIPS = {
   "AL":"01","AK":"02","AZ":"04","AR":"05","CA":"06","CO":"08","CT":"09","DE":"10",
   "DC":"11","FL":"12","GA":"13","HI":"15","ID":"16","IL":"17","IN":"18","IA":"19",
@@ -259,7 +259,7 @@ function hideTooltip() {
 // --- dendrogram ---
 
 function buildTreeData(data) {
-  const clusterOrder = [2, 4, 3, 1];
+  const clusterOrder = [2, 4, 3, 1]; 
 
   return {
     name: "root",
@@ -505,7 +505,7 @@ function drawMap(us) {
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "central")
     .attr("font-size", "8px")
-    .attr("fill", "#fff")
+    .attr("fill", "#ffff")
     .attr("font-weight", "bold")
     .attr("pointer-events", "none")
     .text(function(d) { return stateFromFeature(d) || ""; });
@@ -568,7 +568,7 @@ d3.select("#map").on("click", function() {
 // --- load data ---
 
 Promise.all([
-  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json"),
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-albers-10m.json"), // topojson data for US map
   d3.csv("data/gap_only_clustered.csv")
 ]).then(([us, csv]) => {
   cachedUS = us;
