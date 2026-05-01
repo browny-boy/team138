@@ -289,7 +289,6 @@ function drawDendro(data) {
   const width = container.clientWidth;
   if (width < 10) return;
 
-  // Chained: d3.hierarchy + root.sort by gap score descending within each cluster
   const root = d3.hierarchy(buildTreeData(data))
     .sort((a, b) => d3.descending(a.data.gap, b.data.gap));
 
